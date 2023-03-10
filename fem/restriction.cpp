@@ -1150,7 +1150,7 @@ void L2FaceRestriction::SingleValuedConformingAddMultTranspose(
          for (int j = offset; j < next_offset; ++j)
          {
             int idx_j = d_indices[j];
-            dof_value +=  d_x(idx_j % nface_dofs, c, idx_j / nface_dofs);
+            dof_value += d_x(idx_j % nface_dofs, c, idx_j / nface_dofs);
          }
          d_y(t?c:i,t?i:c) += dof_value;
       }
@@ -1181,9 +1181,8 @@ void L2FaceRestriction::DoubleValuedConformingAddMultTranspose(
             int idx_j = d_indices[j];
             bool isE1 = idx_j < dofs;
             idx_j = isE1 ? idx_j : idx_j - dofs;
-            dof_value +=  isE1 ?
-                          d_x(idx_j % nface_dofs, c, 0, idx_j / nface_dofs)
-                          :d_x(idx_j % nface_dofs, c, 1, idx_j / nface_dofs);
+            dof_value += (isE1 ? d_x(idx_j % nface_dofs, c, 0, idx_j / nface_dofs)
+                          : d_x(idx_j % nface_dofs, c, 1, idx_j / nface_dofs));
          }
          d_y(t?c:i,t?i:c) += dof_value;
       }
