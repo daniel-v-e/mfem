@@ -976,12 +976,9 @@ void ParFiniteElementSpace::Build_Dof_TrueDof_Matrix() const // matrix P
 
 const Operator *ParFiniteElementSpace::GetProlongationMatrix() const
 {
-   if (Conforming())
+   if (Conforming() && !nd_strias)
    {
       if (Pconf) { return Pconf; }
-
-      if (nd_strias) { return Dof_TrueDof_Matrix(); }
-
       if (NRanks == 1)
       {
          Pconf = new IdentityOperator(GetTrueVSize());
