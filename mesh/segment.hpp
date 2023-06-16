@@ -36,36 +36,37 @@ public:
    Segment(int ind1, int ind2, int attr = 1);
 
    /// Set the indices the element according to the input.
-   virtual void SetVertices(const int *ind);
+   void SetVertices(const int *ind) override;
 
    /// Return element's type.
-   virtual Type GetType() const { return Element::SEGMENT; }
+   Type GetType() const override { return Element::SEGMENT; }
 
    /// Returns the indices of the element's  vertices.
-   virtual void GetVertices(Array<int> &v) const;
+   void GetVertices(Array<int> &v) const override;
+   void SetVertices(const Array<int> &v) override;
 
-   virtual int *GetVertices() { return indices; }
+   int *GetVertices() override { return indices; }
 
-   virtual int GetNVertices() const { return 2; }
+   int GetNVertices() const override { return 2; }
 
-   virtual int GetNEdges() const { return (0); }
+   int GetNEdges() const override { return 0; }
 
-   virtual const int *GetEdgeVertices(int ei) const { return NULL; }
+   const int *GetEdgeVertices(int ei) const override { return NULL; }
 
    /// @deprecated Use GetNFaces(void) and GetNFaceVertices(int) instead.
-   MFEM_DEPRECATED virtual int GetNFaces(int &nFaceVertices) const
+   MFEM_DEPRECATED int GetNFaces(int &nFaceVertices) const override
    { nFaceVertices = 0; return 0; }
 
-   virtual int GetNFaces() const { return 0; }
+   int GetNFaces() const override { return 0; }
 
-   virtual int GetNFaceVertices(int) const { return 0; }
+   int GetNFaceVertices(int) const override { return 0; }
 
-   virtual const int *GetFaceVertices(int fi) const { return NULL; }
+   const int *GetFaceVertices(int fi) const override { return NULL; }
 
-   virtual Element *Duplicate(Mesh *m) const
+   Element *Duplicate(Mesh *m) const override
    { return new Segment(indices, attribute); }
 
-   virtual ~Segment() { }
+   virtual ~Segment() = default;
 };
 
 class Linear1DFiniteElement;

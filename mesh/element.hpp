@@ -62,6 +62,7 @@ public:
 
    /// Returns element's vertices.
    virtual void GetVertices(Array<int> &v) const = 0;
+   virtual void SetVertices(const Array<int> &v) = 0;
 
    /// @note The returned array should NOT be deleted by the caller.
    virtual int *GetVertices() = 0;

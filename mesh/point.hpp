@@ -33,33 +33,34 @@ public:
    Point( const int *ind, int attr = -1 );
 
    /// Return element's type.
-   virtual Type GetType() const { return Element::POINT; }
+   Type GetType() const override { return Element::POINT; }
 
-   /// Returns the indices of the element's  vertices.
-   virtual void GetVertices( Array<int> &v ) const;
+   /// Access the indices of the element's  vertices.
+   void GetVertices(Array<int> &v) const override;
+   void SetVertices(const  Array<int> &v) override;
 
-   virtual int * GetVertices () { return indices; }
+   int * GetVertices () override { return indices; }
 
-   virtual int GetNVertices() const { return 1; }
+   int GetNVertices() const override { return 1; }
 
-   virtual int GetNEdges() const { return (0); }
+   int GetNEdges() const override { return (0); }
 
-   virtual const int *GetEdgeVertices(int ei) const { return NULL; }
+   const int *GetEdgeVertices(int ei) const override { return NULL; }
 
    /// @deprecated Use GetNFaces(void) and GetNFaceVertices(int) instead.
-   MFEM_DEPRECATED virtual int GetNFaces(int &nFaceVertices) const
+   MFEM_DEPRECATED int GetNFaces(int &nFaceVertices) const override
    { nFaceVertices = 0; return 0; }
 
-   virtual int GetNFaces() const { return 0; }
+   int GetNFaces() const override { return 0; }
 
-   virtual int GetNFaceVertices(int) const { return 0; }
+   int GetNFaceVertices(int) const override { return 0; }
 
-   virtual const int *GetFaceVertices(int fi) const { return NULL; }
+   const int *GetFaceVertices(int fi) const override { return NULL; }
 
-   virtual Element *Duplicate(Mesh *m) const
+   Element *Duplicate(Mesh *m) const override
    { return new Point (indices, attribute); }
 
-   virtual ~Point() { }
+   virtual ~Point() = default;
 };
 
 class PointFiniteElement;
