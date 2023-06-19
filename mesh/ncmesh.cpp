@@ -2461,6 +2461,9 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
    }
    mesh.boundary.SetSize(0);
 
+   // Save off boundary face vertices to make boundary elements later.
+   std::map<int, mfem::Array<int>> unique_boundary_faces;
+
    // create an mfem::Element for each leaf Element
    for (int i = 0; i < NElements; i++)
    {
@@ -2478,62 +2481,49 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
          elem->GetVertices()[j] = nodes[node[j]].vert_index;
       }
 
-      // create boundary elements
-      // TODO: use boundary_faces?
-      for (int k = 0; k < gi.nf; k++)
+      // Loop over faces and collect those marked boundary
+      for (int k = 0; k < gi.nf; ++k)
       {
-         const int* fv = gi.faces[k];
          const int nfv = gi.nfv[k];
-         const Face* face = faces.Find(node[fv[0]], node[fv[1]],
-                                       node[fv[2]], node[fv[3]]);
-         if (face->Boundary())
+         const int *fv = gi.faces[k];
+         const auto id = faces.FindId(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]);
+         if (id >= 0 && faces[id].Boundary())
          {
-            if ((nc_elem.geom == Geometry::CUBE) ||
-                ((nc_elem.geom == Geometry::PRISM ||
-                  nc_elem.geom == Geometry::PYRAMID) && nfv == 4))
+            unique_boundary_faces[id].SetSize(nfv);
+            for (int v = 0; v < nfv; ++v)
             {
-               auto* quad = (Quadrilateral*) mesh.NewElement(Geometry::SQUARE);
-               quad->SetAttribute(face->attribute);
-               for (int j = 0; j < 4; j++)
-               {
-                  quad->GetVertices()[j] = nodes[node[fv[j]]].vert_index;
-               }
-               mesh.boundary.Append(quad);
-            }
-            else if (nc_elem.geom == Geometry::PRISM ||
-                     nc_elem.geom == Geometry::PYRAMID ||
-                     nc_elem.geom == Geometry::TETRAHEDRON)
-            {
-               MFEM_ASSERT(nfv == 3, "");
-               auto* tri = (Triangle*) mesh.NewElement(Geometry::TRIANGLE);
-               tri->SetAttribute(face->attribute);
-               for (int j = 0; j < 3; j++)
-               {
-                  tri->GetVertices()[j] = nodes[node[fv[j]]].vert_index;
-               }
-               mesh.boundary.Append(tri);
-            }
-            else if (nc_elem.geom == Geometry::SQUARE ||
-                     nc_elem.geom == Geometry::TRIANGLE)
-            {
-               auto* segment = (Segment*) mesh.NewElement(Geometry::SEGMENT);
-               segment->SetAttribute(face->attribute);
-               for (int j = 0; j < 2; j++)
-               {
-                  segment->GetVertices()[j] = nodes[node[fv[2*j]]].vert_index;
-               }
-               mesh.boundary.Append(segment);
-            }
-            else
-            {
-               MFEM_ASSERT(nc_elem.geom == Geometry::SEGMENT, "");
-               auto* point = (mfem::Point*) mesh.NewElement(Geometry::POINT);
-               point->SetAttribute(face->attribute);
-               point->GetVertices()[0] = nodes[node[fv[0]]].vert_index;
-               mesh.boundary.Append(point);
+               unique_boundary_faces[id][v] = nodes[node[fv[v]]].vert_index;
             }
          }
       }
+   }
+
+   auto geom_from_nfv = [](int nfv){
+      switch (nfv)
+      {
+         case 1: return Geometry::POINT;
+         case 2: return Geometry::SEGMENT;
+         case 3: return Geometry::TRIANGLE;
+         case 4: return Geometry::SQUARE;
+      }
+      return Geometry::INVALID;
+   };
+
+   for (const auto &fv : unique_boundary_faces)
+   {
+      const auto f = fv.first;
+      const auto &v = fv.second;
+      const auto &face = faces.At(f);
+
+      auto geom = geom_from_nfv(v.Size());
+
+      MFEM_ASSERT(geom != Geometry::INVALID, "nfv: " << v.Size() << " does not match a valid face geometry: Quad, Tri, Segment, Point");
+
+      // Add a new boundary element, with matching attribute and vertices
+      mesh.boundary.Append(mesh.NewElement(geom));
+      auto * const be = mesh.boundary.Last();
+      be->SetAttribute(face.attribute);
+      be->SetVertices(v);
    }
 }
 
