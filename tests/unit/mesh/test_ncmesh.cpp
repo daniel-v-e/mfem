@@ -901,8 +901,117 @@ TEST_CASE("GetVectorValueInFaceNeighborElement", "[Parallel], [NCMesh]")
          }
       }
    }
+
+TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
+{
+   auto smesh = Mesh("../../data/beam-hex.mesh");
+
+   auto pmesh = ParMesh(MPI_COMM_WORLD, smesh);
+
+   int nbe = pmesh.GetNBE();
+
+   MPI_Allreduce(MPI_IN_PLACE, &nbe, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+   CHECK(nbe == smesh.GetNBE());
+
+   smesh.EnsureNCMesh();
+
+   auto pmesh2 = ParMesh(MPI_COMM_WORLD, smesh);
+   nbe = pmesh2.GetNBE();
+
+   MPI_Allreduce(MPI_IN_PLACE, &nbe, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+   CHECK(nbe == smesh.GetNBE());
 }
 
 #endif // MFEM_USE_MPI
+
+TEST_CASE("ReferenceCubeRefinements", "[NCMesh]")
+{
+   {
+      auto smesh = Mesh("../../data/ref-cube.mesh");
+
+      CHECK(smesh.GetNBE() == 6);
+
+      smesh.UniformRefinement();
+
+      CHECK(smesh.GetNBE() == 6 * 4);
+
+      CHECK(smesh.Conforming());
+   }
+
+   {
+      auto smesh = Mesh("../../data/ref-cube.mesh");
+      smesh.EnsureNCMesh();
+
+      CHECK(smesh.GetNBE() == 6);
+
+      smesh.UniformRefinement();
+
+      CHECK(smesh.GetNBE() == 6 * 4);
+
+      CHECK(smesh.Nonconforming());
+   }
+
+   auto smesh = Mesh("../../data/ref-cube.mesh");
+   smesh.EnsureNCMesh();
+   Array<Refinement> refs;
+   refs.Append(Refinement(0, Refinement::X));
+   smesh.GeneralRefinement(refs);
+
+   // Now have a pair of elements, make the second element a different
+   // attribute.
+   smesh.SetAttribute(1, 2);
+
+   REQUIRE(smesh.GetNBE() == 2 * 5);
+
+   // Throw away the NCMesh, will restart NC later.
+   smesh.ncmesh = nullptr;
+
+   // Introduce an internal boundary element
+   for (int f = 0; f < smesh.GetNumFaces(); ++f)
+   {
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         // This is the internal face between attributes.
+         auto *new_elem = smesh.GetFace(f)->Duplicate(&smesh);
+         new_elem->SetAttribute(7);
+         smesh.AddBdrElement(new_elem);
+         break;
+      }
+   }
+
+   CHECK(smesh.GetNBE() == 2 * 5 + 1); // Exactly one boundary element must be added
+
+   smesh.EnsureNCMesh();
+
+   // Now NC refine one of the attached elements, this should result in 4
+   // internal boundary elements.
+   refs[0].index = 1;
+   refs[0].ref_type = Refinement::XYZ;
+
+   smesh.GeneralRefinement(refs);
+
+   // There should now be four internal boundary elements, where there was one
+   // before.
+   CHECK(smesh.GetNBE() == 5 /* external boundaries of elem 0  */
+                         + 4 /* internal boundaries */
+                         + (5 * 4) /* external boundaries of elem 1 */);
+
+   // Count the number of internal boundaries
+   int num_internal = 0;
+   for (int f = 0; f < smesh.GetNumFaces(); ++f)
+   {
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         ++num_internal;
+      }
+   }
+   CHECK(num_internal == 4);
+}
 
 } // namespace mfem
