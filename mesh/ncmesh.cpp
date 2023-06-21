@@ -2486,13 +2486,15 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
       {
          const int nfv = gi.nfv[k];
          const int * const fv = gi.faces[k];
-         const auto id = faces.FindId(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]);
+         const auto id = faces.FindId(node[fv[0]], node[fv[1]], node[fv[2]],
+                                      node[fv[3]]);
          if (id >= 0 && faces[id].Boundary())
          {
             // Add in all boundary faces that are not masters of another face
-            if ((nfv == 4 && QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
-                  || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
-                  || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[1]]) == 0))
+            if ((nfv == 4 &&
+                 QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
+                || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
+                || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[1]]) == 0))
             {
                // This face has no split faces below, it is conformal or a slave.
                unique_boundary_faces[id].SetSize(nfv);
@@ -2506,7 +2508,8 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
       }
    }
 
-   auto geom_from_nfv = [](int nfv){
+   auto geom_from_nfv = [](int nfv)
+   {
       switch (nfv)
       {
          case 1: return Geometry::POINT;
@@ -2525,7 +2528,9 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
 
       auto geom = geom_from_nfv(v.Size());
 
-      MFEM_ASSERT(geom != Geometry::INVALID, "nfv: " << v.Size() << " does not match a valid face geometry: Quad, Tri, Segment, Point");
+      MFEM_ASSERT(geom != Geometry::INVALID,
+                  "nfv: " << v.Size() <<
+                  " does not match a valid face geometry: Quad, Tri, Segment, Point");
 
       // Add a new boundary element, with matching attribute and vertices
       mesh.boundary.Append(mesh.NewElement(geom));
