@@ -2481,18 +2481,26 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
          elem->GetVertices()[j] = nodes[node[j]].vert_index;
       }
 
-      // Loop over faces and collect those marked boundary
+      // Loop over faces and collect those marked as boundaries
       for (int k = 0; k < gi.nf; ++k)
       {
          const int nfv = gi.nfv[k];
-         const int *fv = gi.faces[k];
+         const int * const fv = gi.faces[k];
          const auto id = faces.FindId(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]);
          if (id >= 0 && faces[id].Boundary())
          {
-            unique_boundary_faces[id].SetSize(nfv);
-            for (int v = 0; v < nfv; ++v)
+            // Add in all boundary faces that are not masters of another face
+            if ((nfv == 4 && QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
+                  || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
+                  || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[1]]) == 0))
             {
-               unique_boundary_faces[id][v] = nodes[node[fv[v]]].vert_index;
+               // This face has no split faces below, it is conformal or a slave.
+               unique_boundary_faces[id].SetSize(nfv);
+               for (int v = 0; v < nfv; ++v)
+               {
+                  // using map overwrites if a face is visited twice.
+                  unique_boundary_faces[id][v] = nodes[node[fv[v]]].vert_index;
+               }
             }
          }
       }
@@ -2526,6 +2534,7 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
       be->SetVertices(v);
    }
 }
+
 
 void NCMesh::OnMeshUpdated(Mesh *mesh)
 {
@@ -5297,6 +5306,13 @@ void NCMesh::QuadFaceSplitLevel(int vn1, int vn2, int vn3, int vn4,
          h_level = std::max(hl1, hl2) + 1;
          v_level = std::max(vl1, vl2);
    }
+}
+
+int NCMesh::QuadFaceSplitLevel(int vn1, int vn2, int vn3, int vn4) const
+{
+   int h_level, v_level;
+   QuadFaceSplitLevel(vn1, vn2, vn3, vn4, h_level, v_level);
+   return h_level + v_level;
 }
 
 void NCMesh::CountSplits(int elem, int splits[3]) const

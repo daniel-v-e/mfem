@@ -384,7 +384,6 @@ int ParMesh::BuildLocalBoundary(const Mesh& mesh, const int* partitioning,
                                 Table*& edge_element)
 {
    int nbdry = 0;
-
    if (mesh.NURBSext)
    {
       activeBdrElem.SetSize(mesh.GetNBE());

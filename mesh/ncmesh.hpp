@@ -668,9 +668,33 @@ protected: // implementation
 
    mfem::Element* NewMeshElement(int geom) const;
 
+   /**
+    * @brief Given a quad face defined by four vertices, establish which edges
+    * of this face have been split, and if so optionally return the mid points
+    * of those edges.
+    *
+    * @param v1 The first vertex defining the face
+    * @param v2 The second vertex defining the face
+    * @param v3 The third vertex defining the face
+    * @param v4 The fourth vertex defining the face
+    * @param mid optional return of the edge mid points.
+    * @return int 0 -- no split, 1 -- "vertical" split, 2 -- "horizontal" split
+    */
    int QuadFaceSplitType(int v1, int v2, int v3, int v4, int mid[5]
                          = NULL /*optional output of mid-edge nodes*/) const;
 
+   /**
+    * @brief Given a tri face defined by three vertices, establish whether the
+    * edges that make up this face have been split, and if so optionally return
+    * the midpoints.
+    *
+    * @param v1 The first vertex defining the face
+    * @param v2 The second vertex defining the face
+    * @param v3 The third vertex defining the face
+    * @param mid optional return of the edge mid points.
+    * @return true Splits for all edges have been found
+    * @return false
+    */
    bool TriFaceSplit(int v1, int v2, int v3, int mid[3] = NULL) const;
 
    void ForceRefinement(int vn1, int vn2, int vn3, int vn4);
@@ -932,9 +956,7 @@ protected: // implementation
    void InitDerefTransforms();
    void SetDerefMatrixCodes(int parent, Array<int> &fine_coarse);
 
-
    // vertex temporary data, used by GetMeshComponents
-
    struct TmpVertex
    {
       bool valid, visited;
@@ -953,10 +975,56 @@ protected: // implementation
 
    void FindFaceNodes(int face, int node[4]);
 
+   /**
+    * @brief Return the number of splits of this edge that have occurred in the
+    * NCMesh. If zero, this means the segment is not the master of any other segments.
+    *
+    * @param vn1 The first vertex making up the segment
+    * @param vn2 The second vertex making up the segment
+    * @return int The depth of splits of this segment that are present in the mesh.
+    */
    int EdgeSplitLevel(int vn1, int vn2) const;
+   /**
+    * @brief Return the number of splits of this triangle that have occurred in
+    * the NCMesh. If zero, this means the triangle is not the master of any
+    * other triangle.
+    *
+    * @param vn1 The first vertex making up the triangle
+    * @param vn2 The second vertex making up the triangle
+    * @param vn3 The third vertex making up the triangle
+    * @return int The depth of splits of this triangle that are present in the mesh.
+    */
    int TriFaceSplitLevel(int vn1, int vn2, int vn3) const;
+   /**
+    * @brief Computes the number of horizontal and vertical splits of this quad
+    * that have occurred in the NCMesh. If zero, this means the quad is not
+    * the master of any other quad.
+    *
+    * @param vn1 The first vertex making up the quad
+    * @param vn2 The second vertex making up the quad
+    * @param vn3 The third vertex making up the quad
+    * @param vn4 The fourth vertex making up the quad
+    * @param h_level The number of "horizontal" splits of the quad
+    * @param v_level The number of "vertical" splits of the quad
+    */
    void QuadFaceSplitLevel(int vn1, int vn2, int vn3, int vn4,
                            int& h_level, int& v_level) const;
+   /**
+    * @brief Returns the total number of splits of this quad that have occurred
+    * in the NCMesh. If zero, this means the quad is not
+    * the master of any other quad.
+    * @details This is a convenience wrapper that sums the horizontal and
+    * vertical levels from the full method.
+    *
+    * @param vn1 The first vertex making up the quad
+    * @param vn2 The second vertex making up the quad
+    * @param vn3 The third vertex making up the quad
+    * @param vn4 The fourth vertex making up the quad
+    * @return int The depth of splits of this triangle that are present in the
+    * mesh. NB: An isotropic refinement has a level of 2, one horizontal split,
+    * followed by a vertical split.
+    */
+   int QuadFaceSplitLevel(int vn1, int vn2, int vn3, int vn4) const;
 
    void CountSplits(int elem, int splits[3]) const;
    void GetLimitRefinements(Array<Refinement> &refinements, int max_level);
@@ -992,7 +1060,6 @@ protected: // implementation
    void CopyElements(int elem, const BlockArray<Element> &tmp_elements);
    /// Load the deprecated MFEM mesh v1.1 format for backward compatibility.
    void LoadLegacyFormat(std::istream &input, int &curved, int &is_nc);
-
 
    // geometry
 
