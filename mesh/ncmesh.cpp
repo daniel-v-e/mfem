@@ -2490,18 +2490,22 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                                       node[fv[3]]);
          if (id >= 0 && faces[id].Boundary())
          {
+
             // Add in all boundary faces that are not masters of another face
             if ((nfv == 4 &&
                  QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
                 || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
-                || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[1]]) == 0))
+                || (nfv == 2 &&
+                    EdgeSplitLevel(node[fv[0]], node[fv[2]]) == 0)) // That fv[2] is on purpose
             {
                // This face has no split faces below, it is conformal or a slave.
                unique_boundary_faces[id].SetSize(nfv);
                for (int v = 0; v < nfv; ++v)
                {
                   // using map overwrites if a face is visited twice.
-                  unique_boundary_faces[id][v] = nodes[node[fv[v]]].vert_index;
+                  // The nfv==2 is necessary because faces of 2D are storing the
+                  // second index in the 2 slot, not the 1 slot.
+                  unique_boundary_faces[id][v] = nodes[node[fv[(nfv==2) ? 2*v : v]]].vert_index;
                }
             }
          }
