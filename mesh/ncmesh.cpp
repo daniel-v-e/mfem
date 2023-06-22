@@ -2490,13 +2490,21 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                                       node[fv[3]]);
          if (id >= 0 && faces[id].Boundary())
          {
+            const auto &face = faces[id];
+            if (face.elem[1] >= 0 && nc_elem.rank > std::min(elements[face.elem[0]].rank, elements[face.elem[1]].rank))
+            {
+               // This is a conformal face, but this element is not the lowest
+               // ranking attached processor, thus not the owner of the face.
+               // Thus, we do not add this face.
+               continue;
+            }
 
-            // Add in all boundary faces that are not masters of another face
+            // Add in all boundary faces that are not masters of another face.
+            // The fv[2] in the edge split is on purpose.
             if ((nfv == 4 &&
                  QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
                 || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
-                || (nfv == 2 &&
-                    EdgeSplitLevel(node[fv[0]], node[fv[2]]) == 0)) // That fv[2] is on purpose
+                || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[2]]) == 0))
             {
                // This face has no split faces below, it is conformal or a slave.
                unique_boundary_faces[id].SetSize(nfv);
