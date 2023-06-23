@@ -2449,15 +2449,15 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
    // left uninitialized here; they will be initialized later by the Mesh from
    // Nodes -- here we just make sure mesh.vertices has the correct size.
 
-   for (int i = 0; i < mesh.NumOfElements; i++)
+   for (auto elem : mesh.elements)
    {
-      mesh.FreeElement(mesh.elements[i]);
+      mesh.FreeElement(elem);
    }
    mesh.elements.SetSize(0);
 
-   for (int i = 0; i < mesh.NumOfBdrElements; i++)
+   for (auto elem : mesh.boundary)
    {
-      mesh.FreeElement(mesh.boundary[i]);
+      mesh.FreeElement(elem);
    }
    mesh.boundary.SetSize(0);
 
@@ -2491,7 +2491,8 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
          if (id >= 0 && faces[id].Boundary())
          {
             const auto &face = faces[id];
-            if (face.elem[1] >= 0 && nc_elem.rank > std::min(elements[face.elem[0]].rank, elements[face.elem[1]].rank))
+            if (face.elem[0] >= 0 && face.elem[1] >= 0 &&
+               nc_elem.rank != std::min(elements[face.elem[0]].rank, elements[face.elem[1]].rank))
             {
                // This is a conformal face, but this element is not the lowest
                // ranking attached processor, thus not the owner of the face.
@@ -2510,9 +2511,10 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                unique_boundary_faces[id].SetSize(nfv);
                for (int v = 0; v < nfv; ++v)
                {
-                  // using map overwrites if a face is visited twice.
+                  // Using a map overwrites if a face is visited twice.
                   // The nfv==2 is necessary because faces of 2D are storing the
                   // second index in the 2 slot, not the 1 slot.
+                  int node_to_access = node[fv[(nfv==2) ? 2*v : v]];
                   unique_boundary_faces[id][v] = nodes[node[fv[(nfv==2) ? 2*v : v]]].vert_index;
                }
             }

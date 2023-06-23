@@ -577,17 +577,17 @@ void ParNCMesh::CalcFaceOrientations()
    face_orient.SetSize(NFaces);
    face_orient = 0;
 
-   for (auto face = faces.begin(); face != faces.end(); ++face)
+   for (auto face : faces)
    {
-      if (face->elem[0] >= 0 && face->elem[1] >= 0 && face->index < NFaces)
+      if (face.elem[0] >= 0 && face.elem[1] >= 0 && face.index < NFaces)
       {
-         Element *e1 = &elements[face->elem[0]];
-         Element *e2 = &elements[face->elem[1]];
+         Element *e1 = &elements[face.elem[0]];
+         Element *e2 = &elements[face.elem[1]];
 
          if (e1->rank == e2->rank) { continue; }
          if (e1->rank > e2->rank) { std::swap(e1, e2); }
 
-         face_orient[face->index] = get_face_orientation(*face, *e1, *e2);
+         face_orient[face.index] = get_face_orientation(face, *e1, *e2);
       }
    }
 }
