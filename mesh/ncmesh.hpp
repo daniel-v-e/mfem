@@ -673,29 +673,34 @@ protected: // implementation
     * of this face have been split, and if so optionally return the mid points
     * of those edges.
     *
-    * @param v1 The first vertex defining the face
-    * @param v2 The second vertex defining the face
-    * @param v3 The third vertex defining the face
-    * @param v4 The fourth vertex defining the face
+    * @param n1 The first node defining the face
+    * @param n2 The second node defining the face
+    * @param n3 The third node defining the face
+    * @param n4 The fourth node defining the face
     * @param mid optional return of the edge mid points.
     * @return int 0 -- no split, 1 -- "vertical" split, 2 -- "horizontal" split
     */
-   int QuadFaceSplitType(int v1, int v2, int v3, int v4, int mid[5]
+   int QuadFaceSplitType(int n1, int n2, int n3, int n4, int mid[5]
                          = NULL /*optional output of mid-edge nodes*/) const;
 
    /**
     * @brief Given a tri face defined by three vertices, establish whether the
     * edges that make up this face have been split, and if so optionally return
     * the midpoints.
+    * @details This is a necessary condition for this face to have been split,
+    * but is not sufficient. Consider a triangle attached to three refined
+    * triangles, in this scenario all edges can be split but this face not be
+    * split. In this case, it is necessary to check if there is a face made up
+    * of the returned midpoint nodes.
     *
-    * @param v1 The first vertex defining the face
-    * @param v2 The second vertex defining the face
-    * @param v3 The third vertex defining the face
+    * @param n1 The first node defining the face
+    * @param n2 The second node defining the face
+    * @param n3 The third node defining the face
     * @param mid optional return of the edge mid points.
     * @return true Splits for all edges have been found
     * @return false
     */
-   bool TriFaceSplit(int v1, int v2, int v3, int mid[3] = NULL) const;
+   bool TriFaceSplit(int n1, int n2, int n3, int mid[3] = NULL) const;
 
    void ForceRefinement(int vn1, int vn2, int vn3, int vn4);
 
@@ -986,8 +991,8 @@ protected: // implementation
    int EdgeSplitLevel(int vn1, int vn2) const;
    /**
     * @brief Return the number of splits of this triangle that have occurred in
-    * the NCMesh. If zero, this means the triangle is not the master of any
-    * other triangle.
+    * the NCMesh. If zero, this means the triangle is neither split, nor the
+    * master of a split face.
     *
     * @param vn1 The first vertex making up the triangle
     * @param vn2 The second vertex making up the triangle

@@ -2507,7 +2507,8 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                 || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
                 || (nfv == 2 && EdgeSplitLevel(node[fv[0]], node[fv[2]]) == 0))
             {
-               // This face has no split faces below, it is conformal or a slave.
+               // This face has no split faces below, it is conformal or a
+               // slave.
                unique_boundary_faces[id].SetSize(nfv);
                for (int v = 0; v < nfv; ++v)
                {
@@ -2759,8 +2760,7 @@ bool NCMesh::TriFaceSplit(int v1, int v2, int v3, int mid[3]) const
 
    if (mid) { mid[0] = e1, mid[1] = e2, mid[2] = e3; }
 
-   // NOTE: face (v1, v2, v3) still needs to be checked
-   return true;
+   return faces.FindId(e1,e2,e3) >= 0; // A face is made up of the mid points
 }
 
 int NCMesh::find_node(const Element &el, int node)
@@ -5263,17 +5263,36 @@ void NCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
    bdr_edges.Unique();
 }
 
+/**
+ * @brief Base case of convenience variadic max function.
+ *
+ * @tparam T Base type
+ * @param arg Recursion base value
+ * @return T value to max over
+ */
+template<typename T>
+T max(T&& arg)
+{
+return arg;
+}
+/**
+ * @brief Convenience variadic max function.
+ *
+ * @tparam T Base Type
+ * @tparam Ts Parameter pack of other types
+ * @param arg Singular argument
+ * @param args Pack of arguments
+ * @return T maximum value
+ */
+template<typename T, typename... Ts>
+T max(T arg, Ts... args)
+{
+return std::max(std::forward<T>(arg), max(args...));
+}
+
 static int max4(int a, int b, int c, int d)
 {
    return std::max(std::max(a, b), std::max(c, d));
-}
-static int max6(int a, int b, int c, int d, int e, int f)
-{
-   return std::max(max4(a, b, c, d), std::max(e, f));
-}
-static int max8(int a, int b, int c, int d, int e, int f, int g, int h)
-{
-   return std::max(max4(a, b, c, d), max4(e, f, g, h));
 }
 
 int NCMesh::EdgeSplitLevel(int vn1, int vn2) const
@@ -5286,18 +5305,15 @@ int NCMesh::EdgeSplitLevel(int vn1, int vn2) const
 int NCMesh::TriFaceSplitLevel(int vn1, int vn2, int vn3) const
 {
    int mid[3];
-   if (TriFaceSplit(vn1, vn2, vn3, mid) &&
-       faces.FindId(vn1, vn2, vn3) < 0)
+   if (TriFaceSplit(vn1, vn2, vn3, mid))
    {
-      return 1 + max4(TriFaceSplitLevel(vn1, mid[0], mid[2]),
-                      TriFaceSplitLevel(mid[0], vn2, mid[1]),
-                      TriFaceSplitLevel(mid[2], mid[1], vn3),
-                      TriFaceSplitLevel(mid[0], mid[1], mid[2]));
+      return 1 + max(TriFaceSplitLevel(vn1, mid[0], mid[2]),
+                     TriFaceSplitLevel(mid[0], vn2, mid[1]),
+                     TriFaceSplitLevel(mid[2], mid[1], vn3),
+                     TriFaceSplitLevel(mid[0], mid[1], mid[2]));
    }
-   else // not split
-   {
-      return 0;
-   }
+
+   return 0; // not split
 }
 
 void NCMesh::QuadFaceSplitLevel(int vn1, int vn2, int vn3, int vn4,
@@ -5370,57 +5386,52 @@ void NCMesh::CountSplits(int elem, int splits[3]) const
 
    if (el.Geom() == Geometry::CUBE)
    {
-      splits[0] = max8(flevel[0][0], flevel[1][0], flevel[3][0], flevel[5][0],
+      splits[0] = max(flevel[0][0], flevel[1][0], flevel[3][0], flevel[5][0],
                        elevel[0], elevel[2], elevel[4], elevel[6]);
 
-      splits[1] = max8(flevel[0][1], flevel[2][0], flevel[4][0], flevel[5][1],
+      splits[1] = max(flevel[0][1], flevel[2][0], flevel[4][0], flevel[5][1],
                        elevel[1], elevel[3], elevel[5], elevel[7]);
 
-      splits[2] = max8(flevel[1][1], flevel[2][1], flevel[3][1], flevel[4][1],
+      splits[2] = max(flevel[1][1], flevel[2][1], flevel[3][1], flevel[4][1],
                        elevel[8], elevel[9], elevel[10], elevel[11]);
    }
    else if (el.Geom() == Geometry::PRISM)
    {
-      splits[0] = splits[1] =
-                     std::max(
-                        max6(flevel[0][0], flevel[1][0], 0,
-                             flevel[2][0], flevel[3][0], flevel[4][0]),
-                        max6(elevel[0], elevel[1], elevel[2],
-                             elevel[3], elevel[4], elevel[5]));
+      splits[0] = splits[1] = max(flevel[0][0], flevel[1][0], 0,
+                                    flevel[2][0], flevel[3][0], flevel[4][0],
+                                    elevel[0], elevel[1], elevel[2],
+                                    elevel[3], elevel[4], elevel[5]);
 
-      splits[2] = max6(flevel[2][1], flevel[3][1], flevel[4][1],
+      splits[2] = max(flevel[2][1], flevel[3][1], flevel[4][1],
                        elevel[6], elevel[7], elevel[8]);
    }
    else if (el.Geom() == Geometry::PYRAMID)
    {
-      splits[0] = std::max(
-                     max6(flevel[0][0], flevel[1][0], 0,
-                          flevel[2][0], flevel[3][0], flevel[4][0]),
-                     max8(elevel[0], elevel[1], elevel[2],
-                          elevel[3], elevel[4], elevel[5],
-                          elevel[6], elevel[7]));
+      splits[0] = max(flevel[0][0], flevel[1][0], 0,
+                      flevel[2][0], flevel[3][0], flevel[4][0],
+                      elevel[0], elevel[1], elevel[2],
+                      elevel[3], elevel[4], elevel[5],
+                      elevel[6], elevel[7]);
 
       splits[1] = splits[0];
       splits[2] = splits[0];
    }
    else if (el.Geom() == Geometry::TETRAHEDRON)
    {
-      splits[0] = std::max(
-                     max4(flevel[0][0], flevel[1][0], flevel[2][0], flevel[3][0]),
-                     max6(elevel[0], elevel[1], elevel[2],
-                          elevel[3], elevel[4], elevel[5]));
+      splits[0] = max(flevel[0][0], flevel[1][0], flevel[2][0], flevel[3][0],
+                      elevel[0], elevel[1], elevel[2], elevel[3], elevel[4], elevel[5]);
 
       splits[1] = splits[0];
       splits[2] = splits[0];
    }
    else if (el.Geom() == Geometry::SQUARE)
    {
-      splits[0] = std::max(elevel[0], elevel[2]);
-      splits[1] = std::max(elevel[1], elevel[3]);
+      splits[0] = max(elevel[0], elevel[2]);
+      splits[1] = max(elevel[1], elevel[3]);
    }
    else if (el.Geom() == Geometry::TRIANGLE)
    {
-      splits[0] = std::max(elevel[0], std::max(elevel[1], elevel[2]));
+      splits[0] = max(elevel[0], elevel[1], elevel[2]);
       splits[1] = splits[0];
    }
    else
