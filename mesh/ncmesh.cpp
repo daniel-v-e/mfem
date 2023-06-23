@@ -2492,7 +2492,8 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
          {
             const auto &face = faces[id];
             if (face.elem[0] >= 0 && face.elem[1] >= 0 &&
-               nc_elem.rank != std::min(elements[face.elem[0]].rank, elements[face.elem[1]].rank))
+                nc_elem.rank != std::min(elements[face.elem[0]].rank,
+                                         elements[face.elem[1]].rank))
             {
                // This is a conformal face, but this element is not the lowest
                // ranking attached processor, thus not the owner of the face.
@@ -2515,7 +2516,6 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                   // Using a map overwrites if a face is visited twice.
                   // The nfv==2 is necessary because faces of 2D are storing the
                   // second index in the 2 slot, not the 1 slot.
-                  int node_to_access = node[fv[(nfv==2) ? 2*v : v]];
                   unique_boundary_faces[id][v] = nodes[node[fv[(nfv==2) ? 2*v : v]]].vert_index;
                }
             }
@@ -5263,6 +5263,8 @@ void NCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
    bdr_edges.Unique();
 }
 
+namespace
+{
 /**
  * @brief Base case of convenience variadic max function.
  *
@@ -5273,7 +5275,7 @@ void NCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
 template<typename T>
 T max(T&& arg)
 {
-return arg;
+   return arg;
 }
 /**
  * @brief Convenience variadic max function.
@@ -5287,13 +5289,9 @@ return arg;
 template<typename T, typename... Ts>
 T max(T arg, Ts... args)
 {
-return std::max(std::forward<T>(arg), max(args...));
+   return std::max(std::forward<T>(arg), max(args...));
 }
-
-static int max4(int a, int b, int c, int d)
-{
-   return std::max(std::max(a, b), std::max(c, d));
-}
+} // namespace
 
 int NCMesh::EdgeSplitLevel(int vn1, int vn2) const
 {
@@ -5387,23 +5385,23 @@ void NCMesh::CountSplits(int elem, int splits[3]) const
    if (el.Geom() == Geometry::CUBE)
    {
       splits[0] = max(flevel[0][0], flevel[1][0], flevel[3][0], flevel[5][0],
-                       elevel[0], elevel[2], elevel[4], elevel[6]);
+                      elevel[0], elevel[2], elevel[4], elevel[6]);
 
       splits[1] = max(flevel[0][1], flevel[2][0], flevel[4][0], flevel[5][1],
-                       elevel[1], elevel[3], elevel[5], elevel[7]);
+                      elevel[1], elevel[3], elevel[5], elevel[7]);
 
       splits[2] = max(flevel[1][1], flevel[2][1], flevel[3][1], flevel[4][1],
-                       elevel[8], elevel[9], elevel[10], elevel[11]);
+                      elevel[8], elevel[9], elevel[10], elevel[11]);
    }
    else if (el.Geom() == Geometry::PRISM)
    {
       splits[0] = splits[1] = max(flevel[0][0], flevel[1][0], 0,
-                                    flevel[2][0], flevel[3][0], flevel[4][0],
-                                    elevel[0], elevel[1], elevel[2],
-                                    elevel[3], elevel[4], elevel[5]);
+                                  flevel[2][0], flevel[3][0], flevel[4][0],
+                                  elevel[0], elevel[1], elevel[2],
+                                  elevel[3], elevel[4], elevel[5]);
 
       splits[2] = max(flevel[2][1], flevel[3][1], flevel[4][1],
-                       elevel[6], elevel[7], elevel[8]);
+                      elevel[6], elevel[7], elevel[8]);
    }
    else if (el.Geom() == Geometry::PYRAMID)
    {

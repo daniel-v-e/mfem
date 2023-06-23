@@ -176,7 +176,148 @@ TEST_CASE("NCMesh 3D Derefined Volume", "[NCMesh]")
 } // test case
 
 
+int CheckPoisson(Mesh &mesh, int order, int disabled_boundary = -1)
+{
+   constexpr int dim = 3;
+
+   H1_FECollection fec(order, dim);
+   FiniteElementSpace fes(&mesh, &fec);
+
+   GridFunction sol(&fes);
+
+   ConstantCoefficient one(1.0);
+   BilinearForm a(&fes);
+   a.AddDomainIntegrator(new DiffusionIntegrator(one));
+   a.Assemble();
+
+   LinearForm b(&fes);
+   b.AddDomainIntegrator(new DomainLFIntegrator(one));
+   b.Assemble();
+
+   // Add in essential boundary conditions
+   Array<int> ess_tdof_list;
+   REQUIRE(mesh.bdr_attributes.Max() > 0);
+
+   // Mark all boundaries essential
+   Array<int> bdr_attr_is_ess(mesh.bdr_attributes.Max());
+   bdr_attr_is_ess = 1;
+   if (disabled_boundary >= 0)
+   {
+      bdr_attr_is_ess[mesh.bdr_attributes.Find(disabled_boundary)] = 0;
+   }
+
+   fes.GetEssentialTrueDofs(bdr_attr_is_ess, ess_tdof_list);
+   REQUIRE(ess_tdof_list.Size() > 0);
+
+   ConstantCoefficient zero(0.0);
+   sol.ProjectCoefficient(zero);
+   Vector B, X;
+   OperatorPtr A;
+   a.FormLinearSystem(ess_tdof_list, sol, b, A, X, B);
+
+   // Solve the system
+   CG(*A, B, X, 2, 1000, 1e-20, 0.0);
+
+   // Recover the solution
+   a.RecoverFEMSolution(X, b, sol);
+
+   // Check that X solves the system A X = B.
+   A->AddMult(X, B, -1.0);
+   auto residual_norm = B.Norml2();
+   bool satisfy_system = residual_norm < 1e-10;
+   CAPTURE(residual_norm);
+   CHECK(satisfy_system);
+
+   bool satisfy_bc = true;
+   Vector tvec;
+   sol.GetTrueDofs(tvec);
+   for (auto dof : ess_tdof_list)
+   {
+      if (tvec[dof] != 0.0)
+      {
+         satisfy_bc = false;
+         break;
+      }
+   }
+   CHECK(satisfy_bc);
+   return ess_tdof_list.Size();
+};
+
 #ifdef MFEM_USE_MPI
+
+void CheckPoisson(ParMesh &pmesh, int order, int disabled_boundary = -1)
+{
+   constexpr int dim = 3;
+
+   H1_FECollection fec(order, dim);
+   ParFiniteElementSpace pfes(&pmesh, &fec);
+
+   ParGridFunction sol(&pfes);
+
+   ConstantCoefficient one(1.0);
+   ParBilinearForm a(&pfes);
+   a.AddDomainIntegrator(new DiffusionIntegrator(one));
+   a.Assemble();
+
+   ParLinearForm b(&pfes);
+   b.AddDomainIntegrator(new DomainLFIntegrator(one));
+   b.Assemble();
+
+   // Add in essential boundary conditions
+   Array<int> ess_tdof_list;
+   REQUIRE(pmesh.bdr_attributes.Max() > 0);
+
+   Array<int> bdr_attr_is_ess(pmesh.bdr_attributes.Max());
+   bdr_attr_is_ess = 1;
+   if (disabled_boundary >= 0)
+   {
+      CAPTURE(disabled_boundary);
+      bdr_attr_is_ess[pmesh.bdr_attributes.Find(disabled_boundary)] = 0;
+   }
+
+   pfes.GetEssentialTrueDofs(bdr_attr_is_ess, ess_tdof_list);
+   REQUIRE(ess_tdof_list.Size() > 0);
+
+   ConstantCoefficient zero(0.0);
+   sol.ProjectCoefficient(zero);
+   Vector B, X;
+   OperatorPtr A;
+   const bool copy_interior = true; // interior(sol) --> interior(X)
+   a.FormLinearSystem(ess_tdof_list, sol, b, A, X, B, copy_interior);
+
+   // Solve the system
+   CGSolver cg(MPI_COMM_WORLD);
+   // HypreBoomerAMG preconditioner;
+   cg.SetMaxIter(2000);
+   cg.SetRelTol(1e-12);
+   cg.SetPrintLevel(0);
+   cg.SetOperator(*A);
+   // cg.SetPreconditioner(preconditioner);
+   cg.Mult(B, X);
+   // Recover the solution
+   a.RecoverFEMSolution(X, b, sol);
+
+   // Check that X solves the system A X = B.
+   A->AddMult(X, B, -1.0);
+   auto residual_norm = B.Norml2();
+   bool satisfy_system = residual_norm < 1e-10;
+   CAPTURE(residual_norm);
+   CHECK(satisfy_system);
+
+   // Initialize the bdr_dof to be checked
+   Vector tvec;
+   sol.GetTrueDofs(tvec);
+   bool satisfy_bc = true;
+   for (auto dof : ess_tdof_list)
+   {
+      if (tvec[dof] != 0.0)
+      {
+         satisfy_bc = false;
+         break;
+      }
+   }
+   CHECK(satisfy_bc);
+};
 
 // Test case: Verify that a conforming mesh yields the same norm for the
 //            assembled diagonal with PA when using the standard (conforming)
@@ -901,9 +1042,13 @@ TEST_CASE("GetVectorValueInFaceNeighborElement", "[Parallel], [NCMesh]")
          }
       }
    }
+}
 
 TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
 {
+   auto p = GENERATE(2);
+   CAPTURE(p);
+
    auto smesh = Mesh("../../data/ref-cube.mesh");
    smesh.EnsureNCMesh();
 
@@ -921,6 +1066,7 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
    REQUIRE(smesh.GetNBE() == 2 * 5);
 
    // Throw away the NCMesh, will restart NC later.
+   delete smesh.ncmesh;
    smesh.ncmesh = nullptr;
 
    // Introduce an internal boundary element
@@ -939,12 +1085,14 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
    }
    smesh.FinalizeTopology(); // Finalize to build relevant tables
 
-   REQUIRE(smesh.GetNBE() == 2 * 5 +
-           1); // Exactly one boundary element must be added
+   // Exactly one boundary element must be added
+   REQUIRE(smesh.GetNBE() == 2 * 5 + 1);
 
-   auto check_parmesh = [](Mesh &smesh, const std::unique_ptr<int[]> &partition = nullptr)
+   auto check_parmesh = [](Mesh &smesh,
+                           const std::unique_ptr<int[]> &partition = nullptr)
    {
-      auto pmesh = std::unique_ptr<ParMesh>(new ParMesh(MPI_COMM_WORLD, smesh, partition.get()));
+      auto pmesh = std::unique_ptr<ParMesh>(new ParMesh(MPI_COMM_WORLD, smesh,
+                                                        partition.get()));
 
       int nbe = pmesh->GetNBE();
       MPI_Allreduce(MPI_IN_PLACE, &nbe, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
@@ -953,12 +1101,7 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
       return pmesh;
    };
 
-
-   auto partition = std::unique_ptr<int[]>(new int[smesh.GetNE()]);
-   // partition[0] = 0;
-   // partition[1] = 0;
-
-   auto pmesh = check_parmesh(smesh);//, partition);
+   auto pmesh = check_parmesh(smesh);
 
    pmesh->ExchangeFaceNbrData();
 
@@ -970,7 +1113,8 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
       local_to_shared[pmesh->GetSharedFace(i)] = i;
    }
 
-   auto check_face_internal = [](ParMesh& pmesh, int f, const std::map<int, int> &local_to_shared)
+   auto check_face_internal = [](ParMesh& pmesh, int f,
+                                 const std::map<int, int> &local_to_shared)
    {
       int e1, e2;
       pmesh.GetFaceElements(f, &e1, &e2);
@@ -983,7 +1127,8 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
          // attributes
          auto FET = pmesh.GetSharedFaceTransformations(local_to_shared.at(f));
          if (FET->Elem1->Attribute != FET->Elem2->Attribute
-            && (Mpi::WorldRank() < pmesh.GetFaceNbrRank(FET->Elem2No - pmesh.GetNE())) || ncface >= 0)
+             && (Mpi::WorldRank() < pmesh.GetFaceNbrRank(FET->Elem2No - pmesh.GetNE()) ||
+                 ncface >= 0))
          {
             // shared face on domain attribute boundary, which we are the owner
             // of, or is a slave face
@@ -1033,13 +1178,15 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
    smesh.FinalizeTopology();
 
    check_parmesh(smesh);
+   // CheckPoisson(*pmesh, p, 7);
+   // CheckPoisson(*pmesh, p);
 
-   for (int ref : {0, 1})
+   for (int refined_elem : {0, 1})
    {
       // Now NC refine one of the attached elements, this should result in 4
       // internal boundary elements.
       Array<int> el_to_refine;
-      el_to_refine.Append(ref);
+      el_to_refine.Append(refined_elem);
 
       Mesh modified_smesh(smesh);
       modified_smesh.GeneralRefinement(el_to_refine);
@@ -1050,15 +1197,19 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
             + 4 /* internal boundaries */
             + (5 * 4) /* external boundaries of refined */);
 
-      partition = std::unique_ptr<int[]>(new int[modified_smesh.GetNE()]);
+      auto partition = std::unique_ptr<int[]>(new int[modified_smesh.GetNE()]);
       for (int i = 0; i < modified_smesh.GetNE(); ++i)
       {
-         partition[i] = 1;
+         partition[i] = 0;
       }
-      partition[ref + 1 % 2] = 0;
+      partition[refined_elem + 1 % 2] = Mpi::WorldSize() > 1 ? 1 : 0;
 
-      pmesh = check_parmesh(modified_smesh, partition);
+      std::cout << "Finalizing the ParMesh\n";
+
+      pmesh->Finalize();
+      pmesh->FinalizeTopology();
       pmesh->ExchangeFaceNbrData();
+      pmesh = check_parmesh(modified_smesh, partition);
 
       // repopulate the local to shared map.
       local_to_shared.clear();
@@ -1068,7 +1219,7 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
       }
 
       // Count the number of internal faces via the boundary elements
-      int num_internal = 0;
+      num_internal = 0;
       for (int n = 0; n < pmesh->GetNBE(); ++n)
       {
          int f, o;
@@ -1081,37 +1232,22 @@ TEST_CASE("InteriorBoundaryElementConsistency", "[Parallel], [NCMesh]")
       MPI_Barrier(MPI_COMM_WORLD);
       MPI_Allreduce(MPI_IN_PLACE, &num_internal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
       CHECK(num_internal == 4);
+
+      // Define a space and apply an essential boundary condition on the
+      // internal boundary.
+      CAPTURE(refined_elem);
+
+      CheckPoisson(*pmesh, p, 7);
+      CheckPoisson(*pmesh, p);
    }
 }
 
 #endif // MFEM_USE_MPI
 
-TEST_CASE("ReferenceCubeRefinements", "[NCMesh]")
+TEST_CASE("ReferenceCubeInternalBoundaries", "[NCMesh]")
 {
-   {
-      auto smesh = Mesh("../../data/ref-cube.mesh");
-
-      CHECK(smesh.GetNBE() == 6);
-
-      smesh.UniformRefinement();
-
-      CHECK(smesh.GetNBE() == 6 * 4);
-
-      CHECK(smesh.Conforming());
-   }
-
-   {
-      auto smesh = Mesh("../../data/ref-cube.mesh");
-      smesh.EnsureNCMesh();
-
-      CHECK(smesh.GetNBE() == 6);
-
-      smesh.UniformRefinement();
-
-      CHECK(smesh.GetNBE() == 6 * 4);
-
-      CHECK(smesh.Nonconforming());
-   }
+   auto p = GENERATE(1,2,3);
+   CAPTURE(p);
 
    auto smesh = Mesh("../../data/ref-cube.mesh");
    smesh.EnsureNCMesh();
@@ -1125,7 +1261,7 @@ TEST_CASE("ReferenceCubeRefinements", "[NCMesh]")
 
    REQUIRE(smesh.GetNBE() == 2 * 5);
 
-   // Throw away the NCMesh, will restart NC later.
+   delete smesh.ncmesh;
    smesh.ncmesh = nullptr;
 
    // Introduce an internal boundary element
@@ -1143,61 +1279,286 @@ TEST_CASE("ReferenceCubeRefinements", "[NCMesh]")
       }
    }
 
+   smesh.FinalizeTopology();
+
    // Exactly one boundary element must be added
    CHECK(smesh.GetNBE() == 2 * 5 + 1);
 
    smesh.EnsureNCMesh();
-
-   // Still exactly one boundary element must be added
    CHECK(smesh.GetNBE() == 2 * 5 + 1);
+
+   int without_internal = CheckPoisson(smesh, p, 7); // Exclude the internal boundary
+   int with_internal = CheckPoisson(smesh, p); // Include the internal boundary
+
+   switch (p)
+   {
+      case 1:
+         CHECK(with_internal == without_internal); break;
+      case 2:
+         CHECK(with_internal == without_internal + 1); break;
+      case 3:
+         CHECK(with_internal == without_internal + 4); break;
+   }
+
+   auto ref_type = char(GENERATE(Refinement::Y, Refinement::Z, Refinement::YZ,
+                                 Refinement::XYZ));
 
    for (auto ref : {0,1})
    {
       refs[0].index = ref;
-      for (auto ref_type : {2, 4, 6, 7}) // Y, Z, YZ, XYZ
+
+      auto ssmesh = Mesh(smesh);
+
+      CAPTURE(ref_type);
+
+      // Now NC refine one of the attached elements, this should result in 2
+      // internal boundary elements.
+      refs[0].ref_type = ref_type;
+
+      ssmesh.GeneralRefinement(refs);
+
+      // There should now be four internal boundary elements, where there was one
+      // before.
+      if (ref_type == 2 /* Y */ || ref_type == 4 /* Z */)
       {
-         auto ssmesh = Mesh(smesh);
-
-         // Now NC refine one of the attached elements, this should result in 2
-         // internal boundary elements.
-         refs[0].ref_type = ref_type;
-
-         ssmesh.GeneralRefinement(refs);
-
-         // There should now be four internal boundary elements, where there was one
-         // before.
-         if (ref_type == 2 /* Y */ || ref_type == 4 /* Z */)
-         {
-            CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
-                  + 2 /* internal boundaries */
-                  + (2 * 4) /* external boundaries of refined elements */);
-         } else if (ref_type == 6)
-         {
-            CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
-                  + 4 /* internal boundaries */
-                  + (4 * 3) /* external boundaries of refined elements */);
-         } else if (ref_type == 7)
-         {
-            CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
-                  + 4 /* internal boundaries */
-                  + (4 * 3 + 4 * 2) /* external boundaries of refined elements */);
-         }
-
-         // Count the number of internal boundary elements
-         int num_internal = 0;
-         for (int n = 0; n < ssmesh.GetNBE(); ++n)
-         {
-            int f, o;
-            ssmesh.GetBdrElementFace(n, &f, &o);
-            int e1, e2;
-            ssmesh.GetFaceElements(f, &e1, &e2);
-            if (e1 >= 0 && e2 >= 0 && ssmesh.GetAttribute(e1) != ssmesh.GetAttribute(e2))
-            {
-               ++num_internal;
-            }
-         }
-         CHECK(num_internal == (ref_type <= 4 ? 2 : 4));
+         CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
+               + 2 /* internal boundaries */
+               + (2 * 4) /* external boundaries of refined elements */);
       }
+      else if (ref_type == 6)
+      {
+         CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
+               + 4 /* internal boundaries */
+               + (4 * 3) /* external boundaries of refined elements */);
+      }
+      else if (ref_type == 7)
+      {
+         CHECK(ssmesh.GetNBE() == 5 /* external boundaries of unrefined element  */
+               + 4 /* internal boundaries */
+               + (4 * 3 + 4 * 2) /* external boundaries of refined elements */);
+      }
+      else
+      {
+         MFEM_ABORT("!");
+      }
+
+      // Count the number of internal boundary elements
+      int num_internal = 0;
+      for (int n = 0; n < ssmesh.GetNBE(); ++n)
+      {
+         int f, o;
+         ssmesh.GetBdrElementFace(n, &f, &o);
+         int e1, e2;
+         ssmesh.GetFaceElements(f, &e1, &e2);
+         if (e1 >= 0 && e2 >= 0 && ssmesh.GetAttribute(e1) != ssmesh.GetAttribute(e2))
+         {
+            ++num_internal;
+         }
+      }
+      CHECK(num_internal == (ref_type <= 4 ? 2 : 4));
+
+      ssmesh.FinalizeTopology();
+
+      without_internal = CheckPoisson(ssmesh, p, 7); // Exclude the internal boundary
+      with_internal = CheckPoisson(ssmesh, p); // Include the internal boundary
+
+      switch (p)
+      {
+         case 1:
+            CHECK(with_internal == without_internal + 1*1); break;
+         case 2:
+            CHECK(with_internal == without_internal + 3*3); break;
+         case 3:
+            CHECK(with_internal == without_internal + 5*5); break;
+      }
+   }
+}
+
+TEST_CASE("ReferenceTetInternalBoundaries", "[NCMesh]")
+{
+   auto p = GENERATE(1,2,3);
+   CAPTURE(p);
+   {
+      auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+
+      CHECK(smesh.GetNBE() == 4);
+
+      smesh.UniformRefinement();
+
+      CHECK(smesh.GetNBE() == 4 * 4);
+
+      CHECK(smesh.Conforming());
+   }
+
+   {
+      auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+      smesh.EnsureNCMesh(true);
+
+      CHECK(smesh.GetNBE() == 4);
+
+      smesh.UniformRefinement();
+
+      CHECK(smesh.GetNBE() == 4 * 4);
+
+      CHECK(smesh.Nonconforming());
+   }
+
+   auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+   Array<Refinement> refs;
+   refs.Append(Refinement(0, Refinement::X));
+   smesh.GeneralRefinement(refs);
+
+   // Now have a pair of elements, make the second element a different
+   // attribute.
+   smesh.SetAttribute(1, 2);
+
+   REQUIRE(smesh.GetNE() == 2);
+   REQUIRE(smesh.GetNBE() == 2 * 3);
+
+   // Introduce an internal boundary element
+   for (int f = 0; f < smesh.GetNumFaces(); ++f)
+   {
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         // This is the internal face between attributes.
+         auto *new_elem = smesh.GetFace(f)->Duplicate(&smesh);
+         new_elem->SetAttribute(4);
+         smesh.AddBdrElement(new_elem);
+         break;
+      }
+   }
+
+   // Exactly one boundary element must be added
+   CHECK(smesh.GetNBE() == 2 * 3 + 1);
+
+   smesh.EnsureNCMesh(true);
+
+   // Still exactly one boundary element must be added
+   CHECK(smesh.GetNBE() == 2 * 3 + 1);
+
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   CheckPoisson(smesh, p, 4); // Exclude the internal boundary
+   CheckPoisson(smesh, p); // Include the internal boundary
+
+   // Now NC refine one of the attached elements, this should result in 2
+   // internal boundary elements.
+   for (int ref : {0, 1})
+   {
+      refs[0].index = ref;
+      refs[0].ref_type = Refinement::XYZ;
+      auto ssmesh = Mesh(smesh);
+      ssmesh.GeneralRefinement(refs);
+
+      // There should now be four internal boundary elements, where there was one
+      // before.
+      CHECK(ssmesh.GetNBE() == 3 /* external boundaries of unrefined element  */
+            + 4 /* internal boundaries */
+            + (3 * 4) /* external boundaries of refined element */);
+
+      // Count the number of internal boundary elements
+      int num_internal = 0;
+      for (int n = 0; n < ssmesh.GetNBE(); ++n)
+      {
+         int f, o;
+         ssmesh.GetBdrElementFace(n, &f, &o);
+         int e1, e2;
+         ssmesh.GetFaceElements(f, &e1, &e2);
+         if (e1 >= 0 && e2 >= 0 && ssmesh.GetAttribute(e1) != ssmesh.GetAttribute(e2))
+         {
+            ++num_internal;
+         }
+      }
+      CHECK(num_internal == 4);
+
+      CheckPoisson(ssmesh, p, 4); // Exclude the internal boundary
+      CheckPoisson(ssmesh, p); // Include the internal boundary
+   }
+}
+
+TEST_CASE("PoissonOnReferenceCubeNC", "[NCMesh]")
+{
+   auto smesh = Mesh("../../data/ref-cube.mesh");
+   smesh.EnsureNCMesh();
+   Array<Refinement> refs(1);
+   refs[0].index = 0;
+   refs[0].ref_type = Refinement::X;
+   smesh.GeneralRefinement(refs);
+
+   // Now have two elements.
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   auto p = GENERATE(1, 2, 3);
+   CAPTURE(p);
+
+   // Check that Poisson can be solved on the domain
+   CheckPoisson(smesh, p);
+
+   auto ref_type = char(GENERATE(Refinement::X, Refinement::Y, Refinement::Z,
+                                 Refinement::XY, Refinement::XZ, Refinement::YZ,
+                                 Refinement::XYZ));
+   CAPTURE(ref_type);
+   for (auto refined_elem : {0}) // The left or the right element
+   {
+      refs[0].index = refined_elem;
+      auto ssmesh = Mesh(smesh);
+
+      // Now NC refine one of the attached elements
+      refs[0].ref_type = ref_type;
+
+      ssmesh.GeneralRefinement(refs);
+      ssmesh.FinalizeTopology();
+      ssmesh.Finalize();
+
+      CAPTURE(refined_elem);
+      CheckPoisson(ssmesh, p);
+   }
+}
+
+TEST_CASE("PoissonOnReferenceTetNC", "[NCMesh]")
+{
+   auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+
+   auto p = GENERATE(1, 2, 3);
+   CAPTURE(p);
+
+   CheckPoisson(smesh, p);
+
+   Array<Refinement> refs(1);
+   refs[0].index = 0;
+   refs[0].ref_type = Refinement::X;
+
+   smesh.GeneralRefinement(refs);
+
+   // Now have two elements.
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   // Check that Poisson can be solved on the pair of tets
+   CheckPoisson(smesh, p);
+
+   auto nc = GENERATE(false, true);
+   CAPTURE(nc);
+
+   smesh.EnsureNCMesh(GENERATE(false, true));
+
+   for (auto refined_elem : {0, 1})
+   {
+      auto ssmesh = Mesh(smesh);
+
+      refs[0].index = refined_elem;
+      refs[0].ref_type = Refinement::XYZ;
+
+      ssmesh.GeneralRefinement(refs);
+      ssmesh.FinalizeTopology();
+      ssmesh.Finalize();
+
+      CAPTURE(refined_elem);
+      CheckPoisson(ssmesh, p);
    }
 }
 
