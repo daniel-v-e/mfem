@@ -598,6 +598,25 @@ void FiniteElementSpace::GetEssentialTrueDofs(const Array<int> &bdr_attr_is_ess,
    else
    {
       R->BooleanMult(ess_vdofs, ess_tdofs);
+#ifdef MFEM_DEBUG
+      // Verify that in boolean arithmetic: P^T ess_dofs = R ess_dofs
+      Array<int> ess_tdofs2(ess_tdofs.Size());
+      GetConformingProlongation()->BooleanMultTranspose(ess_vdofs, ess_tdofs2);
+
+      int counter = 0;
+      for (int i = 0; i < ess_tdofs2.Size(); i++)
+      {
+         if (bool(ess_tdofs[i]) != bool(ess_tdofs2[i]))
+         {
+            std::cout << std::boolalpha;
+            std::cout << "dof " << i << " not matched: " << bool(ess_tdofs[i]) << ' '
+                     << bool(ess_tdofs2[i]) << std::endl;
+            ++counter;
+         }
+      }
+
+      MFEM_VERIFY(counter == 0, "internal MFEM error: counter = " << counter);
+#endif
    }
    MarkerToList(ess_tdofs, ess_tdof_list);
 }
