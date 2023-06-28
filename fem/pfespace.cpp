@@ -90,20 +90,20 @@ ParNURBSExtension *ParFiniteElementSpace::MakeLocalNURBSext(
 void ParFiniteElementSpace::ParInit(ParMesh *pm)
 {
    pmesh = pm;
-   pncmesh = NULL;
+   pncmesh = nullptr;
 
    MyComm = pmesh->GetComm();
    NRanks = pmesh->GetNRanks();
    MyRank = pmesh->GetMyRank();
 
-   gcomm = NULL;
+   gcomm = nullptr;
 
-   P = NULL;
-   Pconf = NULL;
+   P = nullptr;
+   Pconf = nullptr;
    nonconf_P = false;
-   Rconf = NULL;
-   R_transpose = NULL;
-   R = NULL;
+   Rconf = nullptr;
+   R_transpose = nullptr;
+   R = nullptr;
 
    num_face_nbr_dofs = -1;
 
@@ -1042,16 +1042,19 @@ void ParFiniteElementSpace::GetEssentialTrueDofs(const Array<int>
 #ifdef MFEM_DEBUG
    // Verify that in boolean arithmetic: P^T ess_dofs = R ess_dofs.
    Array<int> true_ess_dofs2(true_ess_dofs.Size());
-   HypreParMatrix *Pt = Dof_TrueDof_Matrix()->Transpose();
+   auto Pt = std::unique_ptr<HypreParMatrix>(Dof_TrueDof_Matrix()->Transpose());
+
    const int *ess_dofs_data = ess_dofs.HostRead();
    Pt->BooleanMult(1, ess_dofs_data, 0, true_ess_dofs2);
-   delete Pt;
    int counter = 0;
    const int *ted = true_ess_dofs.HostRead();
    for (int i = 0; i < true_ess_dofs.Size(); i++)
    {
-      if (bool(ted[i]) != bool(true_ess_dofs2[i])) { counter++; }
+      if (bool(ted[i]) != bool(true_ess_dofs2[i])) { ++counter; }
    }
+   MFEM_ASSERT(R->Height() == P->Width(), "!");
+   MFEM_ASSERT(R->Width() == P->Height(), "!");
+   MFEM_ASSERT(R->Width() == ess_dofs.Size(), "!");
    MFEM_VERIFY(counter == 0, "internal MFEM error: counter = " << counter
                << ", rank = " << MyRank);
 #endif

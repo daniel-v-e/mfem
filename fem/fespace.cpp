@@ -519,7 +519,7 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
                                            Array<int> &ess_vdofs,
                                            int component) const
 {
-   Array<int> vdofs, dofs;
+   Array<int> dofs;
 
    ess_vdofs.SetSize(GetVSize());
    ess_vdofs = 0;
@@ -528,19 +528,42 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
    {
       if (bdr_attr_is_ess[GetBdrAttribute(i)-1])
       {
-         if (component < 0)
+         int ncface = -1;
+         if (Nonconforming())
+         {
+            // Need to take care on internal non-conforming "faces". Boundary
+            // elements are conforming or slave.
+            int f = mesh->GetBdrElementEdgeIndex(i);
+            int inf1, inf2;
+            mesh->GetFaceInfos(f, &inf1, &inf2, &ncface);
+         }
+
+         if (ncface >=0)
+         {
+            auto face_index = mesh->GetNCMasterFaceIndex(ncface);
+            if (component < 0)
+            {
+               GetFaceVDofs(face_index, dofs);
+            }
+            else
+            {
+               GetFaceDofs(face_index, dofs);
+               for (int d = 0; d < dofs.Size(); d++)
+               { dofs[d] = DofToVDof(dofs[d], component); }
+            }
+         }
+         else if (component < 0)
          {
             // Mark all components.
-            GetBdrElementVDofs(i, vdofs);
-            mark_dofs(vdofs, ess_vdofs);
+            GetBdrElementVDofs(i, dofs);
          }
          else
          {
             GetBdrElementDofs(i, dofs);
             for (int d = 0; d < dofs.Size(); d++)
             { dofs[d] = DofToVDof(dofs[d], component); }
-            mark_dofs(dofs, ess_vdofs);
          }
+         mark_dofs(dofs, ess_vdofs);
       }
    }
 
@@ -555,8 +578,8 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
       {
          if (component < 0)
          {
-            GetVertexVDofs(bdr_verts[i], vdofs);
-            mark_dofs(vdofs, ess_vdofs);
+            GetVertexVDofs(bdr_verts[i], dofs);
+            mark_dofs(dofs, ess_vdofs);
          }
          else
          {
@@ -570,8 +593,8 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
       {
          if (component < 0)
          {
-            GetEdgeVDofs(bdr_edges[i], vdofs);
-            mark_dofs(vdofs, ess_vdofs);
+            GetEdgeVDofs(bdr_edges[i], dofs);
+            mark_dofs(dofs, ess_vdofs);
          }
          else
          {
@@ -604,15 +627,9 @@ void FiniteElementSpace::GetEssentialTrueDofs(const Array<int> &bdr_attr_is_ess,
       GetConformingProlongation()->BooleanMultTranspose(ess_vdofs, ess_tdofs2);
 
       int counter = 0;
-      for (int i = 0; i < ess_tdofs2.Size(); i++)
+      for (int i = 0; i < ess_tdofs2.Size(); ++i)
       {
-         if (bool(ess_tdofs[i]) != bool(ess_tdofs2[i]))
-         {
-            std::cout << std::boolalpha;
-            std::cout << "dof " << i << " not matched: " << bool(ess_tdofs[i]) << ' '
-                     << bool(ess_tdofs2[i]) << std::endl;
-            ++counter;
-         }
+         if (bool(ess_tdofs[i]) != bool(ess_tdofs2[i])) { ++counter; }
       }
 
       MFEM_VERIFY(counter == 0, "internal MFEM error: counter = " << counter);

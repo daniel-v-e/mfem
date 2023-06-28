@@ -1164,6 +1164,12 @@ public:
    /// the Element object itself should not be deleted by the caller.
    Element *GetBdrElement(int i) { return boundary[i]; }
 
+   int GetNCMasterFaceIndex(int i)
+   {
+      const auto &ncf = nc_faces_info[i];
+      MFEM_VERIFY(ncf.Slave, "If the master face is requested, must be slave");
+      return ncf.MasterFace;
+   }
    const Element *GetFace(int i) const { return faces[i]; }
 
    /// @}
