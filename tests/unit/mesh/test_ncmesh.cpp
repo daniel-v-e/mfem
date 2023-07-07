@@ -1126,8 +1126,291 @@ bool CheckFaceInternal(ParMesh& pmesh, int f,
    return false;
 };
 
-TEST_CASE("InteriorBoundaryElementConsistencyReferenceCubes",
-          "[Parallel], [NCMesh]")
+TEST_CASE("InteriorBoundaryReferenceTets", "[Parallel], [NCMesh]")
+{
+   auto p = GENERATE(1);
+   CAPTURE(p);
+
+   auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+
+   REQUIRE(smesh.GetNBE() == 4);
+
+   Array<Refinement> refs;
+   refs.Append(Refinement(0, Refinement::X));
+   smesh.GeneralRefinement(refs);
+
+   // Now have a pair of elements, make the second element a different
+   // attribute.
+   smesh.SetAttribute(0, 1);
+   smesh.SetAttribute(1, 2);
+
+   REQUIRE(smesh.GetNBE() == 2 * 3);
+
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   // Introduce an internal boundary element
+   const int new_attribute = smesh.bdr_attributes.Max() + 1;
+   for (int f = 0; f < smesh.GetNumFaces(); ++f)
+   {
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         // This is the internal face between attributes.
+         auto *new_elem = smesh.GetFace(f)->Duplicate(&smesh);
+         new_elem->SetAttribute(new_attribute);
+         smesh.AddBdrElement(new_elem);
+         break;
+      }
+   }
+   smesh.FinalizeTopology(); // Finalize to build relevant tables
+   smesh.Finalize();
+
+   // Exactly one boundary element must be added
+   REQUIRE(smesh.GetNBE() == 2 * 3 + 1);
+
+   smesh.EnsureNCMesh(true);
+
+   auto pmesh = CheckParMeshNBE(smesh);
+
+   pmesh->FinalizeTopology();
+   pmesh->Finalize();
+   pmesh->ExchangeFaceNbrData();
+
+   REQUIRE(pmesh->Nonconforming());
+
+   std::map<int, int> local_to_shared;
+   for (int i = 0; i < pmesh->GetNSharedFaces(); ++i)
+   {
+      local_to_shared[pmesh->GetSharedFace(i)] = i;
+   }
+
+   // Count the number of internal faces via the boundary elements
+   int num_internal = 0;
+   for (int n = 0; n < pmesh->GetNBE(); ++n)
+   {
+      int f, o;
+      pmesh->GetBdrElementFace(n, &f, &o);
+      if (CheckFaceInternal(*pmesh, f, local_to_shared))
+      {
+         ++num_internal;
+      }
+   }
+
+   MPI_Allreduce(MPI_IN_PLACE, &num_internal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+   CHECK(num_internal == 1);
+
+   CheckPoisson(*pmesh, p, pmesh->bdr_attributes.Max());
+   CheckPoisson(*pmesh, p);
+
+   for (int refined_elem : {0, 1})
+   {
+      // Now NC refine one of the attached elements, this should result in 4
+      // internal boundary elements.
+      Array<int> el_to_refine;
+      el_to_refine.Append(refined_elem);
+
+      Mesh modified_smesh(smesh);
+      modified_smesh.GeneralRefinement(el_to_refine);
+
+      // There should now be four internal boundary elements, where there was one
+      // before.
+      CHECK(modified_smesh.GetNBE() == 3 /* external boundaries of unrefined  */
+            + 4 /* internal boundaries */
+            + (3 * 4) /* external boundaries of refined */);
+
+      // Force the partition to have the edge case of a parent and child being
+      // divided across the processor boundary. This necessitates the
+      // GhostBoundaryElement treatment.
+      auto partition = std::unique_ptr<int[]>(new int[modified_smesh.GetNE()]);
+      srand(314159);
+      for (int i = 0; i < modified_smesh.GetNE(); ++i)
+      {
+         // Randomly assign to any processor but zero.
+         partition[i] = Mpi::WorldSize() > 1 ? 1 + rand() % (Mpi::WorldSize() - 1) : 0;
+      }
+      if (Mpi::WorldSize() > 0)
+      {
+         // Make sure on rank 1 there is a parent face with only ghost child
+         // faces. This can cause issues with higher order dofs being uncontrolled.
+         partition[refined_elem == 0 ? modified_smesh.GetNE() - 1 : 0] = 0;
+      }
+
+      pmesh = CheckParMeshNBE(modified_smesh, partition);
+      pmesh->Finalize();
+      pmesh->FinalizeTopology();
+      pmesh->ExchangeFaceNbrData();
+
+      auto check_faces = [&]()
+      {
+         // repopulate the local to shared map.
+         local_to_shared.clear();
+         for (int i = 0; i < pmesh->GetNSharedFaces(); ++i)
+         {
+            local_to_shared[pmesh->GetSharedFace(i)] = i;
+         }
+
+         // Count the number of internal faces via the boundary elements
+         num_internal = 0;
+         for (int n = 0; n < pmesh->GetNBE(); ++n)
+         {
+            int f, o;
+            pmesh->GetBdrElementFace(n, &f, &o);
+            if (CheckFaceInternal(*pmesh, f, local_to_shared))
+            {
+               ++num_internal;
+            }
+         }
+         MPI_Allreduce(MPI_IN_PLACE, &num_internal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+         CHECK(num_internal == 4);
+
+         CAPTURE(refined_elem);
+         CheckPoisson(*pmesh, p, smesh.bdr_attributes.Max());
+         CheckPoisson(*pmesh, p);
+      };
+
+      check_faces();
+      pmesh->Rebalance();
+      pmesh->ExchangeFaceNbrData();
+      check_faces();
+   }
+}
+
+TEST_CASE("InteriorBoundaryInlineTetRefines", "[Parallel], [NCMesh]")
+{
+   int p = GENERATE(1,2,3);
+   CAPTURE(p);
+
+   auto smesh = Mesh("../../data/inline-tet.mesh");
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   // Mark even and odd elements with different attributes
+   for (int i = 0; i < smesh.GetNE(); ++i)
+   {
+      smesh.SetAttribute(i, (i % 2) + 1);
+   }
+
+   smesh.SetAttributes();
+   int initial_nbe = smesh.GetNBE();
+
+   // Introduce internal boundary elements
+   const int new_attribute = smesh.bdr_attributes.Max() + 1;
+   for (int f = 0; f < smesh.GetNumFaces(); ++f)
+   {
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         // This is the internal face between attributes.
+         auto *new_elem = smesh.GetFace(f)->Duplicate(&smesh);
+         new_elem->SetAttribute(new_attribute);
+         smesh.AddBdrElement(new_elem);
+      }
+   }
+
+   smesh.FinalizeTopology(); // Finalize to build relevant tables
+   smesh.Finalize();
+
+   smesh.EnsureNCMesh(true);
+
+   // Boundary elements must've been added to make the test valid
+   int num_internal_serial = smesh.GetNBE() - initial_nbe;
+   REQUIRE(num_internal_serial > 0);
+
+   auto partition = std::unique_ptr<int[]>(new int[smesh.GetNE()]);
+
+   for (int i = 0; i < smesh.GetNE(); ++i)
+   {
+      partition[i] = i % Mpi::WorldSize(); // checkerboard partition
+   }
+
+   auto pmesh = CheckParMeshNBE(smesh, partition);
+
+   pmesh->FinalizeTopology();
+   pmesh->Finalize();
+   pmesh->ExchangeFaceNbrData();
+
+   std::map<int, int> local_to_shared;
+   for (int i = 0; i < pmesh->GetNSharedFaces(); ++i)
+   {
+      local_to_shared[pmesh->GetSharedFace(i)] = i;
+   }
+
+   // Count the number of internal faces via the boundary elements
+   int num_internal = 0;
+   for (int n = 0; n < pmesh->GetNBE(); ++n)
+   {
+      int f, o;
+      pmesh->GetBdrElementFace(n, &f, &o);
+      if (CheckFaceInternal(*pmesh, f, local_to_shared))
+      {
+         ++num_internal;
+      }
+   }
+
+   MPI_Allreduce(MPI_IN_PLACE, &num_internal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+   CHECK(num_internal == num_internal_serial);
+
+   CheckPoisson(*pmesh, p, new_attribute);
+   CheckPoisson(*pmesh, p);
+
+   // Mark every third element for refinement
+   Array<int> elem_to_refine;
+   const int factor = 3;
+   for (int i = 0; i < smesh.GetNE()/factor; ++i)
+   {
+      elem_to_refine.Append(factor * i);
+   }
+   smesh.GeneralRefinement(elem_to_refine);
+
+   pmesh = CheckParMeshNBE(smesh);
+   pmesh->FinalizeTopology();
+   pmesh->Finalize();
+   pmesh->ExchangeFaceNbrData();
+
+   // repopulate the local to shared map.
+   local_to_shared.clear();
+   for (int i = 0; i < pmesh->GetNSharedFaces(); ++i)
+   {
+      local_to_shared[pmesh->GetSharedFace(i)] = i;
+   }
+
+   // Count the number of internal boundary elements
+   num_internal_serial = 0;
+   for (int n = 0; n < smesh.GetNBE(); ++n)
+   {
+      int f, o;
+      smesh.GetBdrElementFace(n, &f, &o);
+      int e1, e2;
+      smesh.GetFaceElements(f, &e1, &e2);
+      if (e1 >= 0 && e2 >= 0 && smesh.GetAttribute(e1) != smesh.GetAttribute(e2))
+      {
+         ++num_internal_serial;
+      }
+   }
+
+   num_internal = 0;
+   for (int n = 0; n < pmesh->GetNBE(); ++n)
+   {
+      int f, o;
+      pmesh->GetBdrElementFace(n, &f, &o);
+      if (CheckFaceInternal(*pmesh, f, local_to_shared))
+      {
+         ++num_internal;
+      }
+   }
+   MPI_Allreduce(MPI_IN_PLACE, &num_internal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+   CHECK(num_internal == num_internal_serial);
+
+   CheckPoisson(*pmesh, p, pmesh->bdr_attributes.Max());
+   CheckPoisson(*pmesh, p);
+}
+
+TEST_CASE("InteriorBoundaryReferenceCubes", "[Parallel], [NCMesh]")
 {
    auto p = GENERATE(1,2,3);
    CAPTURE(p);
@@ -1270,7 +1553,7 @@ TEST_CASE("InteriorBoundaryElementConsistencyReferenceCubes",
          CHECK(num_internal == 4);
 
          CAPTURE(refined_elem);
-         CheckPoisson(*pmesh, p, 7);
+         CheckPoisson(*pmesh, p, smesh.bdr_attributes.Max());
          CheckPoisson(*pmesh, p);
       };
 
@@ -1281,7 +1564,7 @@ TEST_CASE("InteriorBoundaryElementConsistencyReferenceCubes",
    }
 }
 
-TEST_CASE("InteriorBoundariesInlineHexRefines", "[Parallel], [NCMesh]")
+TEST_CASE("InteriorBoundaryInlineHexRefines", "[Parallel], [NCMesh]")
 {
    int p = GENERATE(1,2,3);
    CAPTURE(p);

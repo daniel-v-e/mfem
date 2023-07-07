@@ -598,16 +598,16 @@ void ParNCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
 {
    NCMesh::GetBoundaryClosure(bdr_attr_is_ess, bdr_vertices, bdr_edges);
 
-   int i, j;
    // filter out ghost vertices
-   for (i = j = 0; i < bdr_vertices.Size(); i++)
+   int j = 0;
+   for (int i = j = 0; i < bdr_vertices.Size(); i++)
    {
       if (bdr_vertices[i] < NVertices) { bdr_vertices[j++] = bdr_vertices[i]; }
    }
    bdr_vertices.SetSize(j);
 
    // filter out ghost edges
-   for (i = j = 0; i < bdr_edges.Size(); i++)
+   for (int i = j = 0; i < bdr_edges.Size(); i++)
    {
       if (bdr_edges[i] < NEdges) { bdr_edges[j++] = bdr_edges[i]; }
    }
@@ -1314,6 +1314,9 @@ void ParNCMesh::GetFaceNeighbors(ParMesh &pmesh)
 
 void ParNCMesh::ComputeGhostBoundaryElements(const ParMesh &mesh)
 {
+   // 1D cannot have ghost boundary elements
+   if (Dim == 1) { return; }
+
    // ParNCMesh requires additional treatment of "ghost boundary elements" in
    // the scenario where a parent face has only ghost children. A local mesh
    // will fail to identify essential boundary conditions without the use of
@@ -1341,16 +1344,21 @@ void ParNCMesh::ComputeGhostBoundaryElements(const ParMesh &mesh)
             // Need to check if it's a slave, and if it's internal.
             const auto &face = faces[id];
 
-            MFEM_ASSERT(face.index < mesh.faces_info.Size(),
-                        face.index << " >= " << mesh.faces_info.Size());
+            // A conformal face
+            if (face.elem[0] >= 0 && face.elem[1] >= 0) { continue; }
+
+            // A ghost face not indexed by the mesh -> no useful information
+            if (face.index >= mesh.faces_info.Size()) { continue; }
+
             MFEM_ASSERT(face.index >= 0, face.index);
             const auto &finfo = mesh.faces_info[face.index];
-            if (finfo.NCFace >= 0 && finfo.Elem1No >= 0) // slave face
+            if (mesh.IsSlaveFace(finfo)) // slave face
             {
-               // For a slave ghost face, el1 is always the local face
-               auto master_face = mesh.GetNCMasterFaceIndex(finfo.NCFace);
-               MFEM_ASSERT(master_face < mesh.GetNFaces(), "The master face must be local");
-               ghost_boundary_elements[face.attribute].insert(master_face);
+               int master_face = mesh.GetNCMasterFaceIndex(finfo.NCFace);
+               if (master_face < mesh.GetNFaces())
+               {
+                  ghost_boundary_elements[face.attribute].insert(master_face);
+               }
             }
          }
       }
@@ -1997,10 +2005,9 @@ void ParNCMesh::RedistributeElements(Array<int> &new_ranks, int target_elements,
    NeighborElementRankMessage::RecvAll(recv_ghost_ranks, MyComm);
 
    // read new ranks for the ghost layer from messages received
-   NeighborElementRankMessage::Map::iterator it;
-   for (it = recv_ghost_ranks.begin(); it != recv_ghost_ranks.end(); ++it)
+   for (auto &kv : recv_ghost_ranks)
    {
-      NeighborElementRankMessage &msg = it->second;
+      NeighborElementRankMessage &msg = kv.second;
       for (int i = 0; i < msg.Size(); i++)
       {
          int ghost_index = elements[msg.elements[i]].index;

@@ -2670,13 +2670,14 @@ void NCMesh::OnMeshUpdated(Mesh *mesh)
       for (int j = 0; j < gi.nf; j++)
       {
          const int *fv = gi.faces[j];
-         Face* face = faces.Find(el.node[fv[0]], el.node[fv[1]],
-                                 el.node[fv[2]], el.node[fv[3]]);
-         MFEM_ASSERT(face, "face not found!");
+         int fid = faces.FindId(el.node[fv[0]], el.node[fv[1]],
+                                el.node[fv[2]], el.node[fv[3]]);
+         MFEM_ASSERT(fid >= 0, "face not found!");
+         auto &face = faces[fid];
 
-         if (face->index < 0)
+         if (face.index < 0)
          {
-            face->index = NFaces + (nghosts++);
+            face.index = NFaces + (nghosts++);
 
             // store the face geometry
             static const Geometry::Type types[5] =
@@ -2684,7 +2685,7 @@ void NCMesh::OnMeshUpdated(Mesh *mesh)
                Geometry::INVALID, Geometry::INVALID,
                Geometry::SEGMENT, Geometry::TRIANGLE, Geometry::SQUARE
             };
-            face_geom[face->index] = types[gi.nfv[j]];
+            face_geom[face.index] = types[gi.nfv[j]];
          }
       }
    }
@@ -6402,17 +6403,17 @@ void NCMesh::DebugDump(std::ostream &os) const
 
    // dump faces
    os << faces.Size() << "\n";
-   for (auto face = faces.cbegin(); face != faces.cend(); ++face)
+   for (const auto &face : faces)
    {
-      int elem = face->elem[0];
-      if (elem < 0) { elem = face->elem[1]; }
+      int elem = face.elem[0];
+      if (elem < 0) { elem = face.elem[1]; }
       MFEM_ASSERT(elem >= 0, "");
       const Element &el = elements[elem];
 
       int lf = find_local_face(el.Geom(),
-                               find_node(el, face->p1),
-                               find_node(el, face->p2),
-                               find_node(el, face->p3));
+                               find_node(el, face.p1),
+                               find_node(el, face.p2),
+                               find_node(el, face.p3));
 
       const int* fv = GI[el.Geom()].faces[lf];
       const int nfv = GI[el.Geom()].nfv[lf];
@@ -6422,7 +6423,7 @@ void NCMesh::DebugDump(std::ostream &os) const
       {
          os << " " << el.node[fv[i]];
       }
-      //os << " # face " << face.index() << ", index " << face->index << "\n";
+      //os << " # face " << face.index() << ", index " << face.index << "\n";
       os << "\n";
    }
 }

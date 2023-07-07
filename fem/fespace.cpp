@@ -543,7 +543,7 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
             auto face_index = mesh->GetNCMasterFaceIndex(ncface);
             int inf1, inf2;
             mesh->GetFaceInfos(face_index, &inf1, &inf2, &ncface);
-            if (face_index > mesh->GetNumFaces() && ncface < 0)
+            if (face_index >= mesh->GetNumFaces() && ncface < 0)
             {
                // Ghost master face, do not process on this rank
                continue;

@@ -91,6 +91,9 @@ Discretization improvements
 - Introduced support for higher order non conformal Nedelec elements on
   simplices in ParMesh.
 
+- Introduced support for internal boundary elements in nonconformal adapted
+  meshes.
+
 Linear and nonlinear solvers
 ----------------------------
 - Updated interface to MUMPS direct solver to support multiple right-hand
