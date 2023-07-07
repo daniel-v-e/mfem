@@ -519,12 +519,14 @@ ParFiniteElementSpace::GetBdrElementDofs(int i, Array<int> &dofs) const
 int ParFiniteElementSpace::GetFaceDofs(int i, Array<int> &dofs,
                                        int variant) const
 {
-   if (face_dof && variant == 0)
+   if (face_dof != nullptr && variant == 0)
    {
       face_dof->GetRow(i, dofs);
       return fec->GetOrder();
    }
+
    int p = FiniteElementSpace::GetFaceDofs(i, dofs, variant);
+
    if (Conforming())
    {
       ApplyLDofSigns(dofs);
@@ -1024,6 +1026,38 @@ void ParFiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
 {
    FiniteElementSpace::GetEssentialVDofs(bdr_attr_is_ess, ess_dofs, component);
 
+   if (mesh->Nonconforming())
+   {
+      // In a nonconforming mesh, there can be internal boundary elements that
+      // can only be marked from ghost child faces. These are constructed during the
+      // ExchangeFaceNbrData phase
+
+      Array<int> dofs;
+      for (const auto &kv : pncmesh->GetGhostBoundaryElements())
+      {
+         if (bdr_attr_is_ess[kv.first - 1])
+         {
+            if (component < 0)
+            {
+               for (auto f : kv.second)
+               {
+                  GetEntityVDofs(mesh->Dimension() - 1, f, dofs);
+                  MarkDofs(dofs, ess_dofs);
+               }
+            }
+            else
+            {
+               for (auto f : kv.second)
+               {
+                  GetEntityDofs(mesh->Dimension() - 1, f, dofs);
+                  for (auto &d : dofs) { d = DofToVDof(d, component); }
+                  MarkDofs(dofs, ess_dofs);
+               }
+            }
+         }
+      }
+   }
+
    // Make sure that processors without boundary elements mark
    // their boundary dofs (if they have any).
    Synchronize(ess_dofs);
@@ -1048,17 +1082,25 @@ void ParFiniteElementSpace::GetEssentialTrueDofs(const Array<int>
    Pt->BooleanMult(1, ess_dofs_data, 0, true_ess_dofs2);
    int counter = 0;
    const int *ted = true_ess_dofs.HostRead();
+   std::string error_msg = "failed dof: ";
    for (int i = 0; i < true_ess_dofs.Size(); i++)
    {
-      if (bool(ted[i]) != bool(true_ess_dofs2[i])) { ++counter; }
+      if (bool(ted[i]) != bool(true_ess_dofs2[i]))
+      {
+         error_msg += std::to_string(i) += "(R ";
+         error_msg += std::to_string(bool(ted[i])) += " P^T ";
+         error_msg += std::to_string(bool(true_ess_dofs2[i])) += ") ";
+         ++counter;
+      }
    }
    MFEM_ASSERT(R->Height() == P->Width(), "!");
    MFEM_ASSERT(R->Width() == P->Height(), "!");
    MFEM_ASSERT(R->Width() == ess_dofs.Size(), "!");
    MFEM_VERIFY(counter == 0, "internal MFEM error: counter = " << counter
-               << ", rank = " << MyRank);
+               << ", rank = " << MyRank << ", " << error_msg);
 #endif
 
+   MPI_Barrier(MPI_COMM_WORLD);
    MarkerToList(true_ess_dofs, ess_tdof_list);
 }
 
@@ -2432,7 +2474,7 @@ int ParFiniteElementSpace
 
             if (master_dofs.Size() == 0) { continue; }
 
-            const FiniteElement* fe = fec->FiniteElementForGeometry(mf.Geom());
+            const FiniteElement * const fe = fec->FiniteElementForGeometry(mf.Geom());
             if (fe == nullptr) { continue; }
 
             switch (mf.Geom())
@@ -2580,6 +2622,8 @@ int ParFiniteElementSpace
       dof_tdof->SetSize(ndofs*vdim);
       *dof_tdof = -1;
    }
+
+
 
    std::vector<PMatrixRow> pmatrix(total_dofs);
 

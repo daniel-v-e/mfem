@@ -246,6 +246,17 @@ public:
        The debug mesh will have element attributes set to element rank + 1. */
    void GetDebugMesh(Mesh &debug_mesh) const;
 
+   /**
+    * @brief Get the Ghost Boundary Elements object, explicitly behind a const
+    * interface to avoid external modification. See ComputeGhostBoundaryElements
+    * for information on ghost boundary elements and their importance.
+    *
+    * @return std::map<int, std::set<int>> Container from boundary attribute
+    * value to set of codimension 1 objects that are parents of ghost
+    * children with this attribute.
+    */
+   std::map<int, std::set<int>> GetGhostBoundaryElements() const { return ghost_boundary_elements; }
+
 protected: // interface for ParMesh
 
    friend class ParMesh;
@@ -259,6 +270,34 @@ protected: // interface for ParMesh
        communication. */
    void GetFaceNeighbors(class ParMesh &pmesh);
 
+   /**
+    * @brief Given a ParMesh with all FaceNbrData computed, populate the
+    * ghost_boundary_elements.
+    * @details The ghost_boundary_elements container is accessed via
+    * GetGhostBoundaryElements, and represents a collection of parent faces that
+    * are coincident to a given boundary element, but whose child faces are all
+    * ghosts. Boundary elements must be child faces or conformal faces, in
+    * order to calculate functionals and boundary condition integrals. However,
+    * essential boundary conditions, must be imposed via the parent faces, in
+    * order to correctly constrain all face internal DOFs. This is accomplished
+    * by traversing from child faces to parent faces, but these dofs cannot be
+    * constrained if the parent face is a ghost.
+    *
+    * The corollary to this is that a parent face with only ghost children, will
+    * never be marked as part of an internal boundary during the usual boundary
+    * element traversal. Consequently, the ghost boundary elements keep track of
+    * these ghost boundary elements, by collecting them once the face neighbor
+    * data has been exchanged. A ParFiniteElementSpace is then able to loop over
+    * these DOF additionally during GetEssentialVDofs.
+    *
+    * NOTE: Users do not need to call this method, it will be called during
+    * ExchangeFaceNbrData once the relevant predicate information has been
+    * established.
+    *
+    * @param mesh The mesh for whom the ghost boundary elements should be
+    * established.
+    */
+   void ComputeGhostBoundaryElements(const ParMesh &mesh);
 
 protected: // implementation
 
@@ -296,6 +335,13 @@ protected: // implementation
 
    Array<int> ghost_layer;    ///< list of elements whose 'element_type' == 2.
    Array<int> boundary_layer; ///< list of type 3 elements
+
+   /// Master face internal boundary elements that are attached to the processor
+   /// boundary which cannot be found by looping over the boundary elements alone.
+   /// This variable maps from boundary attributes, to a collection of boundary
+   /// faces (i.e. codimension 1 objects) that are parents of ghost child faces
+   /// with this attribute.
+   std::map<int, std::set<int>> ghost_boundary_elements;
 
    void Update() override;
 

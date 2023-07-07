@@ -381,6 +381,10 @@ protected:
    int GetEntityDofs(int entity, int index, Array<int> &dofs,
                      Geometry::Type master_geom = Geometry::INVALID,
                      int variant = 0) const;
+   /// Helper to get vertex, edge or face VDOFs (entity=0,1,2 resp.).
+   int GetEntityVDofs(int entity, int index, Array<int> &dofs,
+                      Geometry::Type master_geom = Geometry::INVALID,
+                      int variant = 0) const;
 
    // Get degenerate face DOFs: see explanation in method implementation.
    int GetDegenerateFaceDofs(int index, Array<int> &dofs,
@@ -819,6 +823,7 @@ public:
    /// @brief Returns the indices of the degrees of freedom for the specified
    /// face, including the DOFs for the edges and the vertices of the face.
    ///
+   ///
    /// In variable order spaces, multiple variants of DOFs can be returned.
    /// See GetEdgeDofs() for more details.
    /// @return Order of the selected variant, or -1 if there are no more
@@ -1166,6 +1171,15 @@ public:
        to zero. */
    static void ListToMarker(const Array<int> &list, int marker_size,
                             Array<int> &marker, int mark_val = -1);
+
+   /**
+    * @brief Helper for looping over entries in mark_array, and setting equal
+    * to -1 if present in dofs. Used in GetEssentialVDofs.
+    *
+    * @param[in] dofs The set of dofs to mark
+    * @param[out] mark_array Array of dofs to mark, indices with
+    */
+   static void MarkDofs(const Array<int> &dofs, Array<int> &mark_array);
 
    /** @brief For a partially conforming FE space, convert a marker array (nonzero
        entries are true) on the partially conforming dofs to a marker array on

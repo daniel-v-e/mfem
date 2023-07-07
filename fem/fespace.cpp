@@ -505,13 +505,12 @@ void FiniteElementSpace::BuildDofToArrays()
    }
 }
 
-static void mark_dofs(const Array<int> &dofs, Array<int> &mark_array)
+void
+FiniteElementSpace::MarkDofs(const Array<int> &dofs, Array<int> &mark_array)
 {
-   for (int i = 0; i < dofs.Size(); i++)
+   for (auto d : dofs)
    {
-      int k = dofs[i];
-      if (k < 0) { k = -1 - k; }
-      mark_array[k] = -1;
+      mark_array[d >= 0 ? d : -1 - d] = -1;
    }
 }
 
@@ -531,25 +530,32 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
          int ncface = -1;
          if (Nonconforming())
          {
-            // Need to take care on internal non-conforming "faces". Boundary
-            // elements are conforming or slave.
+            // Need to take care on internal non-conforming "boundaries". Boundary
+            // elements are conforming or slave. The only exception to this
+            // being "ghost boundary elements" which are master faces
             int f = mesh->GetBdrElementEdgeIndex(i);
             int inf1, inf2;
             mesh->GetFaceInfos(f, &inf1, &inf2, &ncface);
          }
 
-         if (ncface >=0)
+         if (ncface >= 0)
          {
             auto face_index = mesh->GetNCMasterFaceIndex(ncface);
-            if (component < 0)
+            int inf1, inf2;
+            mesh->GetFaceInfos(face_index, &inf1, &inf2, &ncface);
+            if (face_index > mesh->GetNumFaces() && ncface < 0)
             {
-               GetFaceVDofs(face_index, dofs);
+               // Ghost master face, do not process on this rank
+               continue;
+            }
+            else if (component < 0)
+            {
+               GetEntityVDofs(mesh->Dimension() - 1, face_index, dofs);
             }
             else
             {
-               GetFaceDofs(face_index, dofs);
-               for (int d = 0; d < dofs.Size(); d++)
-               { dofs[d] = DofToVDof(dofs[d], component); }
+               GetEntityDofs(mesh->Dimension() - 1, face_index, dofs);
+               for (auto &d : dofs) { d = DofToVDof(d, component); }
             }
          }
          else if (component < 0)
@@ -560,10 +566,10 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
          else
          {
             GetBdrElementDofs(i, dofs);
-            for (int d = 0; d < dofs.Size(); d++)
-            { dofs[d] = DofToVDof(dofs[d], component); }
+            for (auto &d : dofs) { d = DofToVDof(d, component); }
          }
-         mark_dofs(dofs, ess_vdofs);
+
+         MarkDofs(dofs, ess_vdofs);
       }
    }
 
@@ -579,30 +585,26 @@ void FiniteElementSpace::GetEssentialVDofs(const Array<int> &bdr_attr_is_ess,
          if (component < 0)
          {
             GetVertexVDofs(bdr_verts[i], dofs);
-            mark_dofs(dofs, ess_vdofs);
          }
          else
          {
             GetVertexDofs(bdr_verts[i], dofs);
-            for (int d = 0; d < dofs.Size(); d++)
-            { dofs[d] = DofToVDof(dofs[d], component); }
-            mark_dofs(dofs, ess_vdofs);
+            for (auto &d : dofs) { d = DofToVDof(d, component); }
          }
+         MarkDofs(dofs, ess_vdofs);
       }
       for (int i = 0; i < bdr_edges.Size(); i++)
       {
          if (component < 0)
          {
             GetEdgeVDofs(bdr_edges[i], dofs);
-            mark_dofs(dofs, ess_vdofs);
          }
          else
          {
             GetEdgeDofs(bdr_edges[i], dofs);
-            for (int d = 0; d < dofs.Size(); d++)
-            { dofs[d] = DofToVDof(dofs[d], component); }
-            mark_dofs(dofs, ess_vdofs);
+            for (auto &d : dofs) { d = DofToVDof(d, component); }
          }
+         MarkDofs(dofs, ess_vdofs);
       }
    }
 }
@@ -982,6 +984,15 @@ int FiniteElementSpace::GetEntityDofs(int entity, int index, Array<int> &dofs,
             return GetDegenerateFaceDofs(index, dofs, master_geom, variant);
          }
    }
+}
+
+int FiniteElementSpace::GetEntityVDofs(int entity, int index, Array<int> &dofs,
+                                       Geometry::Type master_geom,
+                                       int variant) const
+{
+   int n = GetEntityDofs(entity, index, dofs, master_geom, variant);
+   DofsToVDofs(dofs);
+   return n;
 }
 
 void FiniteElementSpace::BuildConformingInterpolation() const

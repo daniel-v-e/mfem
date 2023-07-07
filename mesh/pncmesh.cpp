@@ -1308,10 +1308,53 @@ void ParNCMesh::GetFaceNeighbors(ParMesh &pmesh)
          MPI_Waitall(int(send_requests.size()), send_requests.data(), status.data());
       }
    }
-
-
    // NOTE: this function skips ParMesh::send_face_nbr_vertices and
    // ParMesh::face_nbr_vertices_offset, these are not used outside of ParMesh
+}
+
+void ParNCMesh::ComputeGhostBoundaryElements(const ParMesh &mesh)
+{
+   // ParNCMesh requires additional treatment of "ghost boundary elements" in
+   // the scenario where a parent face has only ghost children. A local mesh
+   // will fail to identify essential boundary conditions without the use of
+   // these ghost boundary elements, as they will not be added into the list of
+   // local boundary elements, whose masters will eventually be found.
+
+   ghost_boundary_elements.clear();
+   for (int n = NElements; n < NGhostElements + NElements; ++n)
+   {
+      const auto &nc_elem = elements[leaf_elements[n]];
+
+      const int * const node = nc_elem.node;
+      GeomInfo& gi = GI[(int) nc_elem.geom];
+
+      // Loop over faces and find those that are masters of internal boundaries
+      for (int k = 0; k < gi.nf; ++k)
+      {
+         const int * const fv = gi.faces[k];
+         const auto id = faces.FindId(node[fv[0]], node[fv[1]], node[fv[2]],
+                                      node[fv[3]]);
+
+         if (id >= 0 && faces[id].Boundary() && faces[id].index >= NFaces)
+         {
+            // Found a ghost face, and it is a boundary element.
+            // Need to check if it's a slave, and if it's internal.
+            const auto &face = faces[id];
+
+            MFEM_ASSERT(face.index < mesh.faces_info.Size(),
+                        face.index << " >= " << mesh.faces_info.Size());
+            MFEM_ASSERT(face.index >= 0, face.index);
+            const auto &finfo = mesh.faces_info[face.index];
+            if (finfo.NCFace >= 0 && finfo.Elem1No >= 0) // slave face
+            {
+               // For a slave ghost face, el1 is always the local face
+               auto master_face = mesh.GetNCMasterFaceIndex(finfo.NCFace);
+               MFEM_ASSERT(master_face < mesh.GetNFaces(), "The master face must be local");
+               ghost_boundary_elements[face.attribute].insert(master_face);
+            }
+         }
+      }
+   }
 }
 
 void ParNCMesh::ClearAuxPM()
@@ -2484,9 +2527,8 @@ void ParNCMesh::AdjustMeshIds(Array<MeshId> ids[], int rank)
 
    // find vertices/edges of master faces shared with 'rank', and modify their
    // MeshIds so their element/local matches the element of the master face
-   for (int i = 0; i < shared_faces.masters.Size(); i++)
+   for (const MeshId &face_id : shared_faces.masters)
    {
-      const MeshId &face_id = shared_faces.masters[i];
       if (contains_rank[entity_pmat_group[2][face_id.index]])
       {
          int v[4], e[4], eo[4], pos, k;

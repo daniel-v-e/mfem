@@ -1164,8 +1164,10 @@ public:
    /// the Element object itself should not be deleted by the caller.
    Element *GetBdrElement(int i) { return boundary[i]; }
 
-   int GetNCMasterFaceIndex(int i)
+   inline int GetNCMasterFaceIndex(int i) const
    {
+      MFEM_ASSERT(i < nc_faces_info.Size() &&
+                  i >= 0, i << " not in [0, " << nc_faces_info.Size() << ")");
       const auto &ncf = nc_faces_info[i];
       MFEM_VERIFY(ncf.Slave, "If the master face is requested, must be slave");
       return ncf.MasterFace;
@@ -1658,7 +1660,7 @@ public:
                           };
 
    /** @brief This structure is used as a human readable output format that
-       decipheres the information contained in Mesh::FaceInfo when using the
+       deciphers the information contained in Mesh::FaceInfo when using the
        Mesh::GetFaceInformation() method.
 
        The element indices in this structure don't need further processing,

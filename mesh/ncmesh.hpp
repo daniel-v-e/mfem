@@ -412,7 +412,6 @@ protected: // non-public interface for the Mesh class
        by calling Mesh::SetCurvature or otherwise setting the Nodes. */
    void MakeTopologyOnly() { coordinates.DeleteAll(); }
 
-
 protected: // implementation
 
    int Dim, spaceDim; ///< dimensions of the elements and the vertex coordinates
