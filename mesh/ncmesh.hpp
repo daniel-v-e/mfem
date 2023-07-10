@@ -549,7 +549,6 @@ protected: // implementation
 
    Table element_vertex; ///< leaf-element to vertex table, see FindSetNeighbors
 
-
    /// Update the leaf elements indices in leaf_elements
    void UpdateLeafElements();
 
@@ -700,6 +699,35 @@ protected: // implementation
     * @return false
     */
    bool TriFaceSplit(int n1, int n2, int n3, int mid[3] = NULL) const;
+
+   /**
+    * @brief Determine if a Triangle face is not a master
+    *
+    * @param n1 The first node defining the face
+    * @param n2 The second node defining the face
+    * @param n3 The third node defining the face
+    * @return true The face is not a master
+    * @return false The face is a master
+    */
+   inline bool TriFaceNotMaster(int n1, int n2, int n3) const
+   {
+      return !TriFaceSplit(n1,n2,n3) && faces.FindId(n1,n2,n3) >= 0;
+   }
+
+   /**
+    * @brief Determine if  a Quad face is not a master
+    *
+    * @param n1 The first node defining the face
+    * @param n2 The second node defining the face
+    * @param n3 The third node defining the face
+    * @param n4 The fourth node defining the face
+    * @return true The quad face is not a master
+    * @return false The quad face is a master
+    */
+   inline bool QuadFaceNotMaster(int n1, int n2, int n3, int n4) const
+   {
+      return QuadFaceSplitType(n1, n2, n3, n4) == 0;
+   }
 
    void ForceRefinement(int vn1, int vn2, int vn3, int vn4);
 

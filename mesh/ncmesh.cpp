@@ -2502,11 +2502,12 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
             }
 
             // Add in all boundary faces that are not masters of another face.
+            // The fv[2] in the edge split is on purpose.
             if ((nfv == 4 &&
-                 QuadFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]) == 0)
-                || (nfv == 3 && TriFaceSplitLevel(node[fv[0]], node[fv[1]], node[fv[2]]) == 0)
+                 QuadFaceNotMaster(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]))
+                || (nfv == 3 && TriFaceNotMaster(node[fv[0]], node[fv[1]], node[fv[2]]))
                 || (nfv == 2 &&
-                    EdgeSplitLevel(node[fv[0]], node[fv[2]]/* not an index bug */) == 0))
+                    EdgeSplitLevel(node[fv[0]], node[fv[2]] /* [2] not an error*/) == 0))
             {
                // This face has no split faces below, it is conformal or a
                // slave.
@@ -2761,7 +2762,9 @@ bool NCMesh::TriFaceSplit(int v1, int v2, int v3, int mid[3]) const
 
    if (mid) { mid[0] = e1, mid[1] = e2, mid[2] = e3; }
 
-   return faces.FindId(e1,e2,e3) >= 0; // A face is made up of the mid points
+   // This means the face has the necessary nodes to be split, not that it
+   // definitely is.
+   return true;
 }
 
 int NCMesh::find_node(const Element &el, int node)
@@ -5304,7 +5307,8 @@ int NCMesh::EdgeSplitLevel(int vn1, int vn2) const
 int NCMesh::TriFaceSplitLevel(int vn1, int vn2, int vn3) const
 {
    int mid[3];
-   if (TriFaceSplit(vn1, vn2, vn3, mid))
+   if (TriFaceSplit(vn1, vn2, vn3, mid) &&
+       faces.FindId(vn1, vn2, vn3) < 0)
    {
       return 1 + max(TriFaceSplitLevel(vn1, mid[0], mid[2]),
                      TriFaceSplitLevel(mid[0], vn2, mid[1]),
