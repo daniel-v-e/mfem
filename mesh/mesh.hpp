@@ -565,7 +565,7 @@ protected:
    void Make1D(int n, double sx = 1.0);
 
    /// Internal function used in Mesh::MakeRefined
-   void MakeRefined_(Mesh &orig_mesh, const Array<int> ref_factors,
+   void MakeRefined_(Mesh &orig_mesh, const Array<int> &ref_factors,
                      int ref_type);
 
    /// Initialize vertices/elements/boundary/tables from a nonconforming mesh.

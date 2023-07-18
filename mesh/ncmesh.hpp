@@ -702,6 +702,12 @@ protected: // implementation
 
    /**
     * @brief Determine if a Triangle face is not a master
+    * @details This check requires looking for the edges making up the triangle
+    * being split, if nodes exist at their midpoints, and there are vertices at
+    * them, this implies the face COULD be split. To determine if it is, we then
+    * check whether these midpoints have all been connected, this is required to
+    * discriminate between an internal master face surrounded by nonconformal
+    * refinements and a conformal boundary face surrounded by refinements.
     *
     * @param n1 The first node defining the face
     * @param n2 The second node defining the face
@@ -711,7 +717,12 @@ protected: // implementation
     */
    inline bool TriFaceNotMaster(int n1, int n2, int n3) const
    {
-      return !TriFaceSplit(n1,n2,n3) && faces.FindId(n1,n2,n3) >= 0;
+      int mid[3];
+      return !TriFaceSplit(n1, n2, n3, mid) // The edges aren't split
+             // OR none of the midpoints are connected.
+             || (nodes.FindId(mid[0], mid[1]) < 0 &&
+                 nodes.FindId(mid[0], mid[2]) < 0 &&
+                 nodes.FindId(mid[1], mid[2]) < 0);
    }
 
    /**

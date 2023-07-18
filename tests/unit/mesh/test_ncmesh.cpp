@@ -10,6 +10,7 @@
 // CONTRIBUTING.md for details.
 
 #include "mfem.hpp"
+#include "mesh_test_utils.hpp"
 #include "unit_tests.hpp"
 
 namespace mfem
@@ -174,173 +175,7 @@ TEST_CASE("NCMesh 3D Derefined Volume", "[NCMesh]")
 } // test case
 
 
-/**
- * @brief Helper function for performing an H1 Poisson solve on a serial mesh, with
- * homogeneous essential boundary conditions. Optionally can disable a boundary.
- *
- * @param mesh The SERIAL mesh to perform the Poisson solve on
- * @param order The polynomial order of the basis
- * @param disabled_boundary_attribute Optional boundary attribute to NOT apply
- * homogeneous Dirichlet boundary condition on. Default of -1 means no boundary
- * is disabled.
- * @return int The number of DOF that are fixed by the essential boundary condition.
- */
-int CheckPoisson(Mesh &mesh, int order, int disabled_boundary_attribute = -1)
-{
-   constexpr int dim = 3;
-
-   H1_FECollection fec(order, dim);
-   FiniteElementSpace fes(&mesh, &fec);
-
-   GridFunction sol(&fes);
-
-   ConstantCoefficient one(1.0);
-   BilinearForm a(&fes);
-   a.AddDomainIntegrator(new DiffusionIntegrator(one));
-   a.Assemble();
-
-   LinearForm b(&fes);
-   b.AddDomainIntegrator(new DomainLFIntegrator(one));
-   b.Assemble();
-
-   // Add in essential boundary conditions
-   Array<int> ess_tdof_list;
-   REQUIRE(mesh.bdr_attributes.Max() > 0);
-
-   // Mark all boundaries essential
-   Array<int> bdr_attr_is_ess(mesh.bdr_attributes.Max());
-   bdr_attr_is_ess = 1;
-   if (disabled_boundary_attribute >= 0)
-   {
-      bdr_attr_is_ess[mesh.bdr_attributes.Find(disabled_boundary_attribute)] = 0;
-   }
-
-   fes.GetEssentialTrueDofs(bdr_attr_is_ess, ess_tdof_list);
-   REQUIRE(ess_tdof_list.Size() > 0);
-
-   ConstantCoefficient zero(0.0);
-   sol.ProjectCoefficient(zero);
-   Vector B, X;
-   OperatorPtr A;
-   a.FormLinearSystem(ess_tdof_list, sol, b, A, X, B);
-
-   // Solve the system
-   CG(*A, B, X, 2, 1000, 1e-20, 0.0);
-
-   // Recover the solution
-   a.RecoverFEMSolution(X, b, sol);
-
-   // Check that X solves the system A X = B.
-   A->AddMult(X, B, -1.0);
-   auto residual_norm = B.Norml2();
-   bool satisfy_system = residual_norm < 1e-10;
-   CAPTURE(residual_norm);
-   CHECK(satisfy_system);
-
-   bool satisfy_bc = true;
-   Vector tvec;
-   sol.GetTrueDofs(tvec);
-   for (auto dof : ess_tdof_list)
-   {
-      if (tvec[dof] != 0.0)
-      {
-         satisfy_bc = false;
-         break;
-      }
-   }
-   CHECK(satisfy_bc);
-   return ess_tdof_list.Size();
-};
-
 #ifdef MFEM_USE_MPI
-
-/**
- * @brief Helper function for performing an H1 Poisson solve on a parallel mesh, with
- * homogeneous essential boundary conditions. Optionally can disable a boundary.
- *
- * @param mesh The PARALLEL mesh to perform the Poisson solve on
- * @param order The polynomial order of the basis
- * @param disabled_boundary_attribute Optional boundary attribute to NOT apply
- * homogeneous Dirichlet boundary condition on. Default of -1 means no boundary
- * is disabled.
- * @return int The number of DOF that are fixed by the essential boundary condition.
- */
-void CheckPoisson(ParMesh &pmesh, int order,
-                  int disabled_boundary_attribute = -1)
-{
-   constexpr int dim = 3;
-
-   H1_FECollection fec(order, dim);
-   ParFiniteElementSpace pfes(&pmesh, &fec);
-
-   ParGridFunction sol(&pfes);
-
-   ConstantCoefficient one(1.0);
-   ParBilinearForm a(&pfes);
-   a.AddDomainIntegrator(new DiffusionIntegrator(one));
-   a.Assemble();
-   ParLinearForm b(&pfes);
-   b.AddDomainIntegrator(new DomainLFIntegrator(one));
-   b.Assemble();
-
-   // Add in essential boundary conditions
-   Array<int> ess_tdof_list;
-   REQUIRE(pmesh.bdr_attributes.Max() > 0);
-
-   Array<int> bdr_attr_is_ess(pmesh.bdr_attributes.Max());
-   bdr_attr_is_ess = 1;
-   if (disabled_boundary_attribute >= 0)
-   {
-      CAPTURE(disabled_boundary_attribute);
-      bdr_attr_is_ess[pmesh.bdr_attributes.Find(disabled_boundary_attribute)] = 0;
-   }
-
-   pfes.GetEssentialTrueDofs(bdr_attr_is_ess, ess_tdof_list);
-   int num_ess_dof = ess_tdof_list.Size();
-   MPI_Allreduce(MPI_IN_PLACE, &num_ess_dof, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-   REQUIRE(num_ess_dof > 0);
-
-
-   ConstantCoefficient zero(0.0);
-   sol.ProjectCoefficient(zero);
-   Vector B, X;
-   OperatorPtr A;
-   const bool copy_interior = true; // interior(sol) --> interior(X)
-   a.FormLinearSystem(ess_tdof_list, sol, b, A, X, B, copy_interior);
-
-   // Solve the system
-   CGSolver cg(MPI_COMM_WORLD);
-   // HypreBoomerAMG preconditioner;
-   cg.SetMaxIter(2000);
-   cg.SetRelTol(1e-12);
-   cg.SetPrintLevel(0);
-   cg.SetOperator(*A);
-   // cg.SetPreconditioner(preconditioner);
-   cg.Mult(B, X);
-   // Recover the solution
-   a.RecoverFEMSolution(X, b, sol);
-
-   // Check that X solves the system A X = B.
-   A->AddMult(X, B, -1.0);
-   auto residual_norm = B.Norml2();
-   bool satisfy_system = residual_norm < 1e-10;
-   CAPTURE(residual_norm);
-   CHECK(satisfy_system);
-
-   // Initialize the bdr_dof to be checked
-   Vector tvec;
-   sol.GetTrueDofs(tvec);
-   bool satisfy_bc = true;
-   for (auto dof : ess_tdof_list)
-   {
-      if (tvec[dof] != 0.0)
-      {
-         satisfy_bc = false;
-         break;
-      }
-   }
-   CHECK(satisfy_bc);
-};
 
 // Test case: Verify that a conforming mesh yields the same norm for the
 //            assembled diagonal with PA when using the standard (conforming)
@@ -1066,65 +901,6 @@ TEST_CASE("GetVectorValueInFaceNeighborElement", "[Parallel], [NCMesh]")
       }
    }
 }
-
-/**
- * @brief Check that a Parmesh generates the same number of boundary elements as
- * the serial mesh.
- *
- * @param smesh Serial mesh to be built from and compared against
- * @param partition Optional partition
- * @return std::unique_ptr<ParMesh> Pointer to the mesh in question.
- */
-std::unique_ptr<ParMesh> CheckParMeshNBE(Mesh &smesh,
-                                         const std::unique_ptr<int[]> &partition = nullptr)
-{
-   auto pmesh = std::unique_ptr<ParMesh>(new ParMesh(MPI_COMM_WORLD, smesh,
-                                                     partition.get()));
-
-   int nbe = pmesh->GetNBE();
-   MPI_Allreduce(MPI_IN_PLACE, &nbe, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-   CHECK(nbe == smesh.GetNBE());
-   return pmesh;
-};
-
-/**
- * @brief Helper function to track if a face index is internal
- *
- * @param pmesh The mesh containing the face
- * @param f The face index
- * @param local_to_shared A map from local faces to shared faces
- * @return true the face is between domain attributes (and owned by this rank)
- * @return false the face is not between domain attributes or not owned by this rank
- */
-bool CheckFaceInternal(ParMesh& pmesh, int f,
-                       const std::map<int, int> &local_to_shared)
-{
-   int e1, e2;
-   pmesh.GetFaceElements(f, &e1, &e2);
-   int inf1, inf2, ncface;
-   pmesh.GetFaceInfos(f, &inf1, &inf2, &ncface);
-
-   if (e2 < 0 && inf2 >=0)
-   {
-      // Shared face on processor boundary -> Need to discover the neighbor
-      // attributes
-      auto FET = pmesh.GetSharedFaceTransformations(local_to_shared.at(f));
-
-      if (FET->Elem1->Attribute != FET->Elem2->Attribute && f < pmesh.GetNumFaces())
-      {
-         // shared face on domain attribute boundary, which this rank owns
-         return true;
-      }
-   }
-
-   if (e2 >= 0 && pmesh.GetAttribute(e1) != pmesh.GetAttribute(e2))
-   {
-      // local face on domain attribute boundary
-      return true;
-   }
-   return false;
-};
 
 TEST_CASE("InteriorBoundaryReferenceTets", "[Parallel], [NCMesh]")
 {
@@ -2241,6 +2017,42 @@ TEST_CASE("PoissonOnReferenceTetNC", "[NCMesh]")
       CAPTURE(refined_elem);
       CheckPoisson(ssmesh, p);
    }
+}
+
+TEST_CASE("TetBoundaryRefinement", "[NCMesh]")
+{
+   auto smesh = Mesh("../../data/ref-tetrahedron.mesh");
+
+
+   smesh.FinalizeTopology();
+   smesh.Finalize(true);
+   smesh.UniformRefinement();
+
+   smesh.EnsureNCMesh(true);
+
+   CHECK(smesh.GetNBE() == 4 * 4);
+
+   // Loop over elements and mark for refinement if any vertices match the
+   // original
+   Array<int> vertices, elements;
+   // reference vertices of (0,0,0), (1,0,0), (0,1,0), (0,0,1) are [0,3]
+   auto original_vert = [](int i) { return i >= 0 && i <= 3; };
+   for (int n = 0; n < smesh.GetNE(); ++n)
+   {
+      smesh.GetElementVertices(n, vertices);
+      if (std::any_of(vertices.begin(), vertices.end(), original_vert))
+      {
+         elements.Append(n);
+      }
+   }
+
+   smesh.GeneralRefinement(elements);
+   smesh.FinalizeTopology();
+   smesh.Finalize();
+
+   // Each side of the tetrahedron should now have 1 original face, and then 3 *
+   // 4 nonconformally generated faces.
+   CHECK(smesh.GetNBE() == 4 * (1 + 3 * 4));
 }
 
 } // namespace mfem

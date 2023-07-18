@@ -1100,7 +1100,6 @@ void ParFiniteElementSpace::GetEssentialTrueDofs(const Array<int>
                << ", rank = " << MyRank << ", " << error_msg);
 #endif
 
-   MPI_Barrier(MPI_COMM_WORLD);
    MarkerToList(true_ess_dofs, ess_tdof_list);
 }
 

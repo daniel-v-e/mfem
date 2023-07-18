@@ -4389,7 +4389,7 @@ Mesh::Mesh(Mesh *orig_mesh, int ref_factor, int ref_type)
    MakeRefined_(*orig_mesh, ref_factors, ref_type);
 }
 
-void Mesh::MakeRefined_(Mesh &orig_mesh, const Array<int> ref_factors,
+void Mesh::MakeRefined_(Mesh &orig_mesh, const Array<int> &ref_factors,
                         int ref_type)
 {
    SetEmpty();

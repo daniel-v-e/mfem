@@ -2495,19 +2495,20 @@ void NCMesh::GetMeshComponents(Mesh &mesh) const
                 nc_elem.rank != std::min(elements[face.elem[0]].rank,
                                          elements[face.elem[1]].rank))
             {
-               // This is a conformal face, but this element is not the lowest
+               // This is a conformal internal face, but this element is not the lowest
                // ranking attached processor, thus not the owner of the face.
-               // Consequently, we do not add this face to avoid double counting.
+               // Consequently, we do not add this face to avoid double
+               // counting.
                continue;
             }
 
-            // Add in all boundary faces that are not masters of another face.
+            // Add in all boundary faces that are actual boundaries or not masters of another face.
             // The fv[2] in the edge split is on purpose.
             if ((nfv == 4 &&
                  QuadFaceNotMaster(node[fv[0]], node[fv[1]], node[fv[2]], node[fv[3]]))
                 || (nfv == 3 && TriFaceNotMaster(node[fv[0]], node[fv[1]], node[fv[2]]))
                 || (nfv == 2 &&
-                    EdgeSplitLevel(node[fv[0]], node[fv[2]] /* [2] not an error*/) == 0))
+                    EdgeSplitLevel(node[fv[0]], node[fv[2]] /* [2] not an error */) == 0))
             {
                // This face has no split faces below, it is conformal or a
                // slave.
@@ -2762,8 +2763,7 @@ bool NCMesh::TriFaceSplit(int v1, int v2, int v3, int mid[3]) const
 
    if (mid) { mid[0] = e1, mid[1] = e2, mid[2] = e3; }
 
-   // This means the face has the necessary nodes to be split, not that it
-   // definitely is.
+   // This is necessary but not sufficient to determine if a face has been split.
    return true;
 }
 
@@ -5217,9 +5217,8 @@ void NCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
    {
       GetFaceList(); // make sure 'boundary_faces' is up to date
 
-      for (int i = 0; i < boundary_faces.Size(); i++)
+      for (int face : boundary_faces)
       {
-         int face = boundary_faces[i];
          if (bdr_attr_is_ess[faces[face].attribute - 1])
          {
             int node[4];
@@ -5248,9 +5247,8 @@ void NCMesh::GetBoundaryClosure(const Array<int> &bdr_attr_is_ess,
    {
       GetEdgeList(); // make sure 'boundary_faces' is up to date
 
-      for (int i = 0; i < boundary_faces.Size(); i++)
+      for (int face : boundary_faces)
       {
-         int face = boundary_faces[i];
          Face &fc = faces[face];
          if (bdr_attr_is_ess[fc.attribute - 1])
          {
