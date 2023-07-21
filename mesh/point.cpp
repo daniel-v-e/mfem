@@ -33,6 +33,12 @@ void Point::SetVertices(const Array<int> &v)
    indices[0] = v[0];
 }
 
+
+void Point::SetVertices(const int *ind)
+{
+   indices[0] = ind[0];
+}
+
 PointFiniteElement PointFE;
 
 }

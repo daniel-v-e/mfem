@@ -44,9 +44,6 @@ public:
    /// Return 1 if the element needs refinement in order to get conforming mesh.
    int NeedRefinement(HashTable<Hashed2> &v_to_v) const override;
 
-   /// Set the vertices according to the given input.
-   void SetVertices(const int *ind) override;
-
    /** Reorder the vertices so that the longest edge is from vertex 0
        to vertex 1. If called it should be once from the mesh constructor,
        because the order may be used later for setting the edges. **/
@@ -68,11 +65,18 @@ public:
    /// Calculate point matrix corresponding to a chain of transformations.
    static void GetPointMatrix(unsigned transform, DenseMatrix &pm);
 
-   /// Access the indices of the element's  vertices.
+   /// Get the indices defining the vertices
    void GetVertices(Array<int> &v) const override;
+
+   /// Set the indices defining the vertices
    void SetVertices(const Array<int> &v) override;
 
-   int *GetVertices() override { return indices; }
+   /// @note The returned array should NOT be deleted by the caller.
+   int * GetVertices () override { return indices; }
+
+   /// Set the vertices according to the given input.
+   void SetVertices(const int *ind) override;
+
 
    int GetNVertices() const override { return 3; }
 

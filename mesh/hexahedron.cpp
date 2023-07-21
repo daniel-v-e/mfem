@@ -52,6 +52,11 @@ void Hexahedron::SetVertices(const Array<int> &v)
    std::copy(v.begin(), v.end(), indices);
 }
 
+void Hexahedron::SetVertices(const int *ind)
+{
+   std::copy(ind, ind + 8, indices);
+}
+
 TriLinear3DFiniteElement HexahedronFE;
 
 }

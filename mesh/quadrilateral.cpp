@@ -37,10 +37,7 @@ Quadrilateral::Quadrilateral( int ind1, int ind2, int ind3, int ind4,
 
 void Quadrilateral::SetVertices(const int *ind)
 {
-   for (int i=0; i<4; i++)
-   {
-      indices[i] = ind[i];
-   }
+   std::copy(ind, ind + 4, indices);
 }
 
 void Quadrilateral::GetVertices(Array<int> &v) const
