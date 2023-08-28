@@ -921,22 +921,21 @@ void ParMesh::FinalizeParTopo()
    }
 }
 
-ParMesh::ParMesh(MPI_Comm comm, istream &input, bool refine)
+ParMesh::ParMesh(MPI_Comm comm, istream &input, int generate_edges,
+                 int refine, bool fix_orientation)
    : face_nbr_el_to_face(NULL)
    , glob_elem_offset(-1)
    , glob_offset_sequence(-1)
    , gtopo(comm)
+   , pncmesh(NULL)
 {
    MyComm = comm;
    MPI_Comm_size(MyComm, &NRanks);
    MPI_Comm_rank(MyComm, &MyRank);
 
+   Load(input, generate_edges, refine, fix_orientation);
+
    have_face_nbr_data = false;
-   pncmesh = NULL;
-
-   const int gen_edges = 1;
-
-   Load(input, gen_edges, refine, true);
 }
 
 void ParMesh::Load(istream &input, int generate_edges, int refine,
@@ -1794,23 +1793,26 @@ void ParMesh::MarkTetMeshForRefinement(const DSTable &v_to_v)
 
       SortPairs<int, double>(ilen_len, order.Size());
 
-      double d_max = 0.;
+      double d_max = 0., d_min = infinity();
       for (int i = 1; i < order.Size(); i++)
       {
-         d_max = std::max(d_max, ilen_len[i-1].two-ilen_len[i].two);
+         d_max = std::max(d_max, ilen_len[i].two-ilen_len[i-1].two);
+         d_min = std::min(d_min, ilen_len[i].two-ilen_len[i-1].two);
       }
 
 #if 0
       // Debug message from every MPI rank.
       mfem::out << "proc. " << MyRank << '/' << NRanks << ": d_max = " << d_max
-                << endl;
+                << ", d_min = " << d_min << endl;
 #else
       // Debug message just from rank 0.
-      double glob_d_max;
+      double glob_d_max, glob_d_min;
       MPI_Reduce(&d_max, &glob_d_max, 1, MPI_DOUBLE, MPI_MAX, 0, MyComm);
+      MPI_Reduce(&d_min, &glob_d_min, 1, MPI_DOUBLE, MPI_MIN, 0, MyComm);
       if (MyRank == 0)
       {
-         mfem::out << "glob_d_max = " << glob_d_max << endl;
+         mfem::out << "glob_d_max = " << glob_d_max
+                   << ", glob_d_min = " << glob_d_min << endl;
       }
 #endif
    }
@@ -2099,16 +2101,13 @@ void ParMesh::EnsureParNodes()
       ParFiniteElementSpace *pfes =
          new ParFiniteElementSpace(*Nodes->FESpace(), *this);
       ParGridFunction *new_nodes = new ParGridFunction(pfes);
-
       *new_nodes = *Nodes;
-
       if (Nodes->OwnFEC())
       {
          new_nodes->MakeOwner(Nodes->OwnFEC());
          Nodes->MakeOwner(NULL); // takes away ownership of 'fec' and 'fes'
          delete Nodes->FESpace();
       }
-
       delete Nodes;
       Nodes = new_nodes;
    }
@@ -3291,17 +3290,15 @@ void ParMesh::ReorientTetMesh()
    // other ranks in the group
    Array<int> svert_master_rank(svert_lvert.Size());
    Array<int> svert_master_index(svert_lvert);
+   for (int i = 0; i < group_svert.Size(); i++)
    {
-      for (int i = 0; i < group_svert.Size(); i++)
+      int rank = gtopo.GetGroupMasterRank(i+1);
+      for (int j = 0; j < group_svert.RowSize(i); j++)
       {
-         int rank = gtopo.GetGroupMasterRank(i+1);
-         for (int j = 0; j < group_svert.RowSize(i); j++)
-         {
-            svert_master_rank[group_svert.GetRow(i)[j]] = rank;
-         }
+         svert_master_rank[group_svert.GetRow(i)[j]] = rank;
       }
-      svert_comm.Bcast(svert_master_index);
    }
+   svert_comm.Bcast(svert_master_index);
 
    // the pairs (master rank, master local index) define a globally consistent
    // vertex ordering
