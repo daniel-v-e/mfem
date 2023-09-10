@@ -1,0 +1,15 @@
+
+       _/_/_/  _/      _/      _/  _/
+    _/        _/      _/      _/        _/_/_/
+   _/  _/_/  _/      _/      _/  _/  _/_/
+  _/    _/  _/        _/  _/    _/      _/_/
+   _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+
+
+Verification failed: (dim >= 1 && dim <= 3) is false:
+ --> ND_FECollection requires 1 <= dim <= 3.
+ ... in function: mfem::ND_FECollection::ND_FECollection(int, int, int, int)
+ ... in file: fem/fe_coll.cpp:2698
+
+Aborted (core dumped)

@@ -1,0 +1,41 @@
+                                MFEM Example 6
+
+ Compile with: make ex6
+
+ Sample runs:  ex6 -m ../data/square-disc.mesh -o 1
+               ex6 -m ../data/square-disc.mesh -o 2
+               ex6 -m ../data/square-disc-nurbs.mesh -o 2
+               ex6 -m ../data/star.mesh -o 3
+               ex6 -m ../data/escher.mesh -o 2
+               ex6 -m ../data/fichera.mesh -o 2
+               ex6 -m ../data/disc-nurbs.mesh -o 2
+               ex6 -m ../data/ball-nurbs.mesh
+               ex6 -m ../data/pipe-nurbs.mesh
+               ex6 -m ../data/star-surf.mesh -o 2
+               ex6 -m ../data/square-disc-surf.mesh -o 2
+               ex6 -m ../data/amr-quad.mesh
+               ex6 -m ../data/inline-segment.mesh -o 1 -md 100
+
+ Device sample runs:
+               ex6 -pa -d cuda
+               ex6 -pa -d occa-cuda
+               ex6 -pa -d raja-omp
+               ex6 -pa -d ceed-cpu
+             * ex6 -pa -d ceed-cuda
+               ex6 -pa -d ceed-cuda:/gpu/cuda/shared
+
+ Description:  This is a version of Example 1 with a simple adaptive mesh
+               refinement loop. The problem being solved is again the Laplace
+               equation -Delta u = 1 with homogeneous Dirichlet boundary
+               conditions. The problem is solved on a sequence of meshes which
+               are locally refined in a conforming (triangles, tetrahedrons)
+               or non-conforming (quadrilaterals, hexahedra) manner according
+               to a simple ZZ error estimator.
+
+               The example demonstrates MFEM's capability to work with both
+               conforming and nonconforming refinements, in 2D and 3D, on
+               linear, curved and surface meshes. Interpolation of functions
+               from coarse to fine meshes, as well as persistent GLVis
+               visualization are also illustrated.
+
+               We recommend viewing Example 1 before viewing this example.

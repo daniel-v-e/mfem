@@ -1,0 +1,222 @@
+Options used:
+   --mesh ../data/periodic-segment.mesh
+   --problem 0
+   --refine 2
+   --order 3
+   --no-partial-assembly
+   --no-element-assembly
+   --no-full-assembly
+   --device cpu
+   --ode-solver 4
+   --t-final 10
+   --time-step 0.01
+   --visualization
+   --no-visit-datafiles
+   --no-paraview-datafiles
+   --ascii-datafiles
+   --visualization-steps 5
+Device configuration: cpu
+Memory configuration: host-std
+Number of unknowns: 64
+Unable to connect to GLVis server at localhost:19916
+GLVis visualization disabled.
+time step: 5, time: 0.05
+time step: 10, time: 0.1
+time step: 15, time: 0.15
+time step: 20, time: 0.2
+time step: 25, time: 0.25
+time step: 30, time: 0.3
+time step: 35, time: 0.35
+time step: 40, time: 0.4
+time step: 45, time: 0.45
+time step: 50, time: 0.5
+time step: 55, time: 0.55
+time step: 60, time: 0.6
+time step: 65, time: 0.65
+time step: 70, time: 0.7
+time step: 75, time: 0.75
+time step: 80, time: 0.8
+time step: 85, time: 0.85
+time step: 90, time: 0.9
+time step: 95, time: 0.95
+time step: 100, time: 1
+time step: 105, time: 1.05
+time step: 110, time: 1.1
+time step: 115, time: 1.15
+time step: 120, time: 1.2
+time step: 125, time: 1.25
+time step: 130, time: 1.3
+time step: 135, time: 1.35
+time step: 140, time: 1.4
+time step: 145, time: 1.45
+time step: 150, time: 1.5
+time step: 155, time: 1.55
+time step: 160, time: 1.6
+time step: 165, time: 1.65
+time step: 170, time: 1.7
+time step: 175, time: 1.75
+time step: 180, time: 1.8
+time step: 185, time: 1.85
+time step: 190, time: 1.9
+time step: 195, time: 1.95
+time step: 200, time: 2
+time step: 205, time: 2.05
+time step: 210, time: 2.1
+time step: 215, time: 2.15
+time step: 220, time: 2.2
+time step: 225, time: 2.25
+time step: 230, time: 2.3
+time step: 235, time: 2.35
+time step: 240, time: 2.4
+time step: 245, time: 2.45
+time step: 250, time: 2.5
+time step: 255, time: 2.55
+time step: 260, time: 2.6
+time step: 265, time: 2.65
+time step: 270, time: 2.7
+time step: 275, time: 2.75
+time step: 280, time: 2.8
+time step: 285, time: 2.85
+time step: 290, time: 2.9
+time step: 295, time: 2.95
+time step: 300, time: 3
+time step: 305, time: 3.05
+time step: 310, time: 3.1
+time step: 315, time: 3.15
+time step: 320, time: 3.2
+time step: 325, time: 3.25
+time step: 330, time: 3.3
+time step: 335, time: 3.35
+time step: 340, time: 3.4
+time step: 345, time: 3.45
+time step: 350, time: 3.5
+time step: 355, time: 3.55
+time step: 360, time: 3.6
+time step: 365, time: 3.65
+time step: 370, time: 3.7
+time step: 375, time: 3.75
+time step: 380, time: 3.8
+time step: 385, time: 3.85
+time step: 390, time: 3.9
+time step: 395, time: 3.95
+time step: 400, time: 4
+time step: 405, time: 4.05
+time step: 410, time: 4.1
+time step: 415, time: 4.15
+time step: 420, time: 4.2
+time step: 425, time: 4.25
+time step: 430, time: 4.3
+time step: 435, time: 4.35
+time step: 440, time: 4.4
+time step: 445, time: 4.45
+time step: 450, time: 4.5
+time step: 455, time: 4.55
+time step: 460, time: 4.6
+time step: 465, time: 4.65
+time step: 470, time: 4.7
+time step: 475, time: 4.75
+time step: 480, time: 4.8
+time step: 485, time: 4.85
+time step: 490, time: 4.9
+time step: 495, time: 4.95
+time step: 500, time: 5
+time step: 505, time: 5.05
+time step: 510, time: 5.1
+time step: 515, time: 5.15
+time step: 520, time: 5.2
+time step: 525, time: 5.25
+time step: 530, time: 5.3
+time step: 535, time: 5.35
+time step: 540, time: 5.4
+time step: 545, time: 5.45
+time step: 550, time: 5.5
+time step: 555, time: 5.55
+time step: 560, time: 5.6
+time step: 565, time: 5.65
+time step: 570, time: 5.7
+time step: 575, time: 5.75
+time step: 580, time: 5.8
+time step: 585, time: 5.85
+time step: 590, time: 5.9
+time step: 595, time: 5.95
+time step: 600, time: 6
+time step: 605, time: 6.05
+time step: 610, time: 6.1
+time step: 615, time: 6.15
+time step: 620, time: 6.2
+time step: 625, time: 6.25
+time step: 630, time: 6.3
+time step: 635, time: 6.35
+time step: 640, time: 6.4
+time step: 645, time: 6.45
+time step: 650, time: 6.5
+time step: 655, time: 6.55
+time step: 660, time: 6.6
+time step: 665, time: 6.65
+time step: 670, time: 6.7
+time step: 675, time: 6.75
+time step: 680, time: 6.8
+time step: 685, time: 6.85
+time step: 690, time: 6.9
+time step: 695, time: 6.95
+time step: 700, time: 7
+time step: 705, time: 7.05
+time step: 710, time: 7.1
+time step: 715, time: 7.15
+time step: 720, time: 7.2
+time step: 725, time: 7.25
+time step: 730, time: 7.3
+time step: 735, time: 7.35
+time step: 740, time: 7.4
+time step: 745, time: 7.45
+time step: 750, time: 7.5
+time step: 755, time: 7.55
+time step: 760, time: 7.6
+time step: 765, time: 7.65
+time step: 770, time: 7.7
+time step: 775, time: 7.75
+time step: 780, time: 7.8
+time step: 785, time: 7.85
+time step: 790, time: 7.9
+time step: 795, time: 7.95
+time step: 800, time: 8
+time step: 805, time: 8.05
+time step: 810, time: 8.1
+time step: 815, time: 8.15
+time step: 820, time: 8.2
+time step: 825, time: 8.25
+time step: 830, time: 8.3
+time step: 835, time: 8.35
+time step: 840, time: 8.4
+time step: 845, time: 8.45
+time step: 850, time: 8.5
+time step: 855, time: 8.55
+time step: 860, time: 8.6
+time step: 865, time: 8.65
+time step: 870, time: 8.7
+time step: 875, time: 8.75
+time step: 880, time: 8.8
+time step: 885, time: 8.85
+time step: 890, time: 8.9
+time step: 895, time: 8.95
+time step: 900, time: 9
+time step: 905, time: 9.05
+time step: 910, time: 9.1
+time step: 915, time: 9.15
+time step: 920, time: 9.2
+time step: 925, time: 9.25
+time step: 930, time: 9.3
+time step: 935, time: 9.35
+time step: 940, time: 9.4
+time step: 945, time: 9.45
+time step: 950, time: 9.5
+time step: 955, time: 9.55
+time step: 960, time: 9.6
+time step: 965, time: 9.65
+time step: 970, time: 9.7
+time step: 975, time: 9.75
+time step: 980, time: 9.8
+time step: 985, time: 9.85
+time step: 990, time: 9.9
+time step: 995, time: 9.95
+time step: 1000, time: 10

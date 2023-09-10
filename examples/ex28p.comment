@@ -1,0 +1,29 @@
+                       MFEM Example 28 - Parallel Version
+
+ Compile with: make ex28p
+
+ Sample runs:  ex28p
+               ex28p --visit-datafiles
+               ex28p --order 4
+               ex28p --penalty 1e+5
+
+               mpirun -np 4 ex28p
+               mpirun -np 4 ex28p --penalty 1e+5
+
+ Description:  Demonstrates a sliding boundary condition in an elasticity
+               problem. A trapezoid, roughly as pictured below, is pushed
+               from the right into a rigid notch. Normal displacement is
+               restricted, but tangential movement is allowed, so the
+               trapezoid compresses into the notch.
+
+                                       /-------+
+               normal constrained --->/        | <--- boundary force (2)
+               boundary (4)          /---------+
+                                          ^
+                                          |
+                                normal constrained boundary (1)
+
+               This example demonstrates the use of the ConstrainedSolver
+               framework.
+
+               We recommend viewing Example 2 before viewing this example.

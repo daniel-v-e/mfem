@@ -1,0 +1,42 @@
+                                MFEM Example 34
+
+ Compile with: make ex34
+
+ Sample runs:  ex34 -o 2
+               ex34 -o 2 -pa -hex
+
+ Device sample runs:
+               ex34 -o 2 -pa -hex -d cuda
+               ex34 -o 2 -no-pa -d cuda
+
+ Description:  This example code solves a simple magnetostatic problem
+               curl curl A = J where the current density J is computed on a
+               subset of the domain as J = -sigma grad phi. We discretize the
+               vector potential with Nedelec finite elements, the scalar
+               potential with Lagrange finite elements, and the current
+               density with Raviart-Thomas finite elements.
+
+               The example demonstrates the use of a SubMesh to compute the
+               scalar potential and its associated current density which is
+               then transferred to the original mesh and used as a source
+               function.
+
+               Note that this example takes certain liberties with the
+               current density which is not necessarily divergence free
+               as it should be. This was done to focus on the use of the
+               SubMesh to transfer information between a full mesh and a
+               sub-domain. A more rigorous implementation might employ an
+               H(div) saddle point solver to obtain a divergence free J on
+               the SubMesh. It would then also need to ensure that the r.h.s.
+               of curl curl A = J does in fact lie in the range of the weak
+               curl operator by performing a divergence cleaning procedure
+               before the solve. After divergence cleaning the delta
+               parameter would probably not be needed.
+
+               This example is designed to make use of a specific mesh which
+               has a known configuration of elements and boundary attributes.
+               Other meshes could be used but extra care would be required to
+               properly define the SubMesh and the necessary boundaries.
+
+               We recommend viewing examples 1 and 3 before viewing this
+               example.

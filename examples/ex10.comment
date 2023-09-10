@@ -1,0 +1,36 @@
+                                MFEM Example 10
+
+ Compile with: make ex10
+
+ Sample runs:
+    ex10 -m ../data/beam-quad.mesh -s 3 -r 2 -o 2 -dt 3
+    ex10 -m ../data/beam-tri.mesh -s 3 -r 2 -o 2 -dt 3
+    ex10 -m ../data/beam-hex.mesh -s 2 -r 1 -o 2 -dt 3
+    ex10 -m ../data/beam-tet.mesh -s 2 -r 1 -o 2 -dt 3
+    ex10 -m ../data/beam-wedge.mesh -s 2 -r 1 -o 2 -dt 3
+    ex10 -m ../data/beam-quad.mesh -s 14 -r 2 -o 2 -dt 0.03 -vs 20
+    ex10 -m ../data/beam-hex.mesh -s 14 -r 1 -o 2 -dt 0.05 -vs 20
+    ex10 -m ../data/beam-quad-amr.mesh -s 3 -r 2 -o 2 -dt 3
+
+ Description:  This examples solves a time dependent nonlinear elasticity
+               problem of the form dv/dt = H(x) + S v, dx/dt = v, where H is a
+               hyperelastic model and S is a viscosity operator of Laplacian
+               type. The geometry of the domain is assumed to be as follows:
+
+                                 +---------------------+
+                    boundary --->|                     |
+                    attribute 1  |                     |
+                    (fixed)      +---------------------+
+
+               The example demonstrates the use of nonlinear operators (the
+               class HyperelasticOperator defining H(x)), as well as their
+               implicit time integration using a Newton method for solving an
+               associated reduced backward-Euler type nonlinear equation
+               (class ReducedSystemOperator). Each Newton step requires the
+               inversion of a Jacobian matrix, which is done through a
+               (preconditioned) inner solver. Note that implementing the
+               method HyperelasticOperator::ImplicitSolve is the only
+               requirement for high-order implicit (SDIRK) time integration.
+
+               We recommend viewing examples 2 and 9 before viewing this
+               example.

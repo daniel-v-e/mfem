@@ -1,0 +1,32 @@
+                       MFEM Example 25 - Parallel Version
+
+ Compile with: make ex25p
+
+ Sample runs:  mpirun -np 4 ex25p -o 2 -f 1.0 -rs 1 -rp 1 -prob 0
+               mpirun -np 4 ex25p -o 3 -f 10.0 -rs 1 -rp 1 -prob 1
+               mpirun -np 4 ex25p -o 3 -f 5.0 -rs 3 -rp 1 -prob 2
+               mpirun -np 4 ex25p -o 2 -f 1.0 -rs 1 -rp 1 -prob 3
+               mpirun -np 4 ex25p -o 2 -f 1.0 -rs 2 -rp 2 -prob 0 -m ../data/beam-quad.mesh
+               mpirun -np 4 ex25p -o 2 -f 8.0 -rs 2 -rp 2 -prob 4 -m ../data/inline-quad.mesh
+               mpirun -np 4 ex25p -o 2 -f 2.0 -rs 1 -rp 1 -prob 4 -m ../data/inline-hex.mesh
+
+ Device sample runs:
+               mpirun -np 4 ex25p -o 1 -f 3.0 -rs 3 -rp 1 -prob 2 -pa -d cuda
+               mpirun -np 4 ex25p -o 2 -f 1.0 -rs 1 -rp 1 -prob 3 -pa -d cuda
+
+ Description:  This example code solves a simple electromagnetic wave
+               propagation problem corresponding to the second order
+               indefinite Maxwell equation
+
+                  (1/mu) * curl curl E - \omega^2 * epsilon E = f
+
+               with a Perfectly Matched Layer (PML).
+
+               The example demonstrates discretization with Nedelec finite
+               elements in 2D or 3D, as well as the use of complex-valued
+               bilinear and linear forms. Several test problems are included,
+               with prob = 0-3 having known exact solutions, see "On perfectly
+               matched layers for discontinuous Petrov-Galerkin methods" by
+               Vaziri Astaneh, Keith, Demkowicz, Comput Mech 63, 2019.
+
+               We recommend viewing Example 22 before viewing this example.

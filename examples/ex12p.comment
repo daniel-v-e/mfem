@@ -1,0 +1,40 @@
+                       MFEM Example 12 - Parallel Version
+
+ Compile with: make ex12p
+
+ Sample runs:
+    mpirun -np 4 ex12p -m ../data/beam-tri.mesh
+    mpirun -np 4 ex12p -m ../data/beam-quad.mesh
+    mpirun -np 4 ex12p -m ../data/beam-tet.mesh -s 462 -n 10 -o 2 -elast
+    mpirun -np 4 ex12p -m ../data/beam-hex.mesh -s 3878
+    mpirun -np 4 ex12p -m ../data/beam-wedge.mesh -s 81
+    mpirun -np 4 ex12p -m ../data/beam-tri.mesh -s 3877 -o 2 -sys
+    mpirun -np 4 ex12p -m ../data/beam-quad.mesh -s 4544 -n 6 -o 3 -elast
+    mpirun -np 4 ex12p -m ../data/beam-quad-nurbs.mesh
+    mpirun -np 4 ex12p -m ../data/beam-hex-nurbs.mesh
+
+ Description:  This example code solves the linear elasticity eigenvalue
+               problem for a multi-material cantilever beam.
+
+               Specifically, we compute a number of the lowest eigenmodes by
+               approximating the weak form of -div(sigma(u)) = lambda u where
+               sigma(u)=lambda*div(u)*I+mu*(grad*u+u*grad) is the stress
+               tensor corresponding to displacement field u, and lambda and mu
+               are the material Lame constants. The boundary conditions are
+               u=0 on the fixed part of the boundary with attribute 1, and
+               sigma(u).n=f on the remainder. The geometry of the domain is
+               assumed to be as follows:
+
+                                 +----------+----------+
+                    boundary --->| material | material |
+                    attribute 1  |    1     |    2     |
+                    (fixed)      +----------+----------+
+
+               The example highlights the use of the LOBPCG eigenvalue solver
+               together with the BoomerAMG preconditioner in HYPRE. Reusing a
+               single GLVis visualization window for multiple eigenfunctions
+               and optional saving with ADIOS2 (adios2.readthedocs.io) streams
+               are also illustrated.
+
+               We recommend viewing examples 2 and 11 before viewing this
+               example.

@@ -1,0 +1,33 @@
+                                MFEM Example 16
+
+ Compile with: make ex16
+
+ Sample runs:  ex16
+               ex16 -m ../data/inline-tri.mesh
+               ex16 -m ../data/disc-nurbs.mesh -tf 2
+               ex16 -s 1 -a 0.0 -k 1.0
+               ex16 -s 2 -a 1.0 -k 0.0
+               ex16 -s 3 -a 0.5 -k 0.5 -o 4
+               ex16 -s 14 -dt 1.0e-4 -tf 4.0e-2 -vs 40
+               ex16 -m ../data/fichera-q2.mesh
+               ex16 -m ../data/fichera-mixed.mesh
+               ex16 -m ../data/escher.mesh
+               ex16 -m ../data/beam-tet.mesh -tf 10 -dt 0.1
+               ex16 -m ../data/amr-quad.mesh -o 4 -r 0
+               ex16 -m ../data/amr-hex.mesh -o 2 -r 0
+
+ Description:  This example solves a time dependent nonlinear heat equation
+               problem of the form du/dt = C(u), with a non-linear diffusion
+               operator C(u) = \nabla \cdot (\kappa + \alpha u) \nabla u.
+
+               The example demonstrates the use of nonlinear operators (the
+               class ConductionOperator defining C(u)), as well as their
+               implicit time integration. Note that implementing the method
+               ConductionOperator::ImplicitSolve is the only requirement for
+               high-order implicit (SDIRK) time integration. In this example,
+               the diffusion operator is linearized by evaluating with the
+               lagged solution from the previous timestep, so there is only
+               a linear solve.
+
+               We recommend viewing examples 2, 9 and 10 before viewing this
+               example.

@@ -1,0 +1,45 @@
+                       MFEM Example 3 - Parallel Version
+
+ Compile with: make ex3p
+
+ Sample runs:  mpirun -np 4 ex3p -m ../data/star.mesh
+               mpirun -np 4 ex3p -m ../data/square-disc.mesh -o 2
+               mpirun -np 4 ex3p -m ../data/beam-tet.mesh
+               mpirun -np 4 ex3p -m ../data/beam-hex.mesh
+               mpirun -np 4 ex3p -m ../data/beam-hex.mesh -o 2 -pa
+               mpirun -np 4 ex3p -m ../data/escher.mesh
+               mpirun -np 4 ex3p -m ../data/escher.mesh -o 2
+               mpirun -np 4 ex3p -m ../data/fichera.mesh
+               mpirun -np 4 ex3p -m ../data/fichera-q2.vtk
+               mpirun -np 4 ex3p -m ../data/fichera-q3.mesh
+               mpirun -np 4 ex3p -m ../data/square-disc-nurbs.mesh
+               mpirun -np 4 ex3p -m ../data/beam-hex-nurbs.mesh
+               mpirun -np 4 ex3p -m ../data/amr-quad.mesh -o 2
+               mpirun -np 4 ex3p -m ../data/amr-hex.mesh
+               mpirun -np 4 ex3p -m ../data/ref-prism.mesh -o 1
+               mpirun -np 4 ex3p -m ../data/octahedron.mesh -o 1
+               mpirun -np 4 ex3p -m ../data/star-surf.mesh -o 2
+               mpirun -np 4 ex3p -m ../data/mobius-strip.mesh -o 2 -f 0.1
+               mpirun -np 4 ex3p -m ../data/klein-bottle.mesh -o 2 -f 0.1
+
+ Device sample runs:
+               mpirun -np 4 ex3p -m ../data/star.mesh -pa -d cuda
+               mpirun -np 4 ex3p -m ../data/star.mesh -no-pa -d cuda
+               mpirun -np 4 ex3p -m ../data/star.mesh -pa -d raja-cuda
+               mpirun -np 4 ex3p -m ../data/star.mesh -pa -d raja-omp
+               mpirun -np 4 ex3p -m ../data/beam-hex.mesh -pa -d cuda
+
+ Description:  This example code solves a simple electromagnetic diffusion
+               problem corresponding to the second order definite Maxwell
+               equation curl curl E + E = f with boundary condition
+               E x n = <given tangential field>. Here, we use a given exact
+               solution E and compute the corresponding r.h.s. f.
+               We discretize with Nedelec finite elements in 2D or 3D.
+
+               The example demonstrates the use of H(curl) finite element
+               spaces with the curl-curl and the (vector finite element) mass
+               bilinear form, as well as the computation of discretization
+               error when the exact solution is known. Static condensation is
+               also illustrated.
+
+               We recommend viewing examples 1-2 before viewing this example.

@@ -1,0 +1,32 @@
+                                MFEM Example 19
+
+ Compile with: make ex19
+
+ Sample runs:
+    ex19 -m ../data/beam-quad.mesh
+    ex19 -m ../data/beam-tri.mesh
+    ex19 -m ../data/beam-hex.mesh
+    ex19 -m ../data/beam-tet.mesh
+    ex19 -m ../data/beam-wedge.mesh
+    ex19 -m ../data/beam-quad-amr.mesh
+
+ Description:  This examples solves a quasi-static incompressible nonlinear
+               elasticity problem of the form 0 = H(x), where H is an
+               incompressible hyperelastic model and x is a block state vector
+               containing displacement and pressure variables. The geometry of
+               the domain is assumed to be as follows:
+
+                                 +---------------------+
+                    boundary --->|                     |<--- boundary
+                    attribute 1  |                     |     attribute 2
+                    (fixed)      +---------------------+     (fixed, nonzero)
+
+               The example demonstrates the use of block nonlinear operators
+               (the class RubberOperator defining H(x)) as well as a nonlinear
+               Newton solver for the quasi-static problem. Each Newton step
+               requires the inversion of a Jacobian matrix, which is done
+               through a (preconditioned) inner solver. The specialized block
+               preconditioner is implemented as a user-defined solver.
+
+               We recommend viewing examples 2, 5, and 10 before viewing this
+               example.

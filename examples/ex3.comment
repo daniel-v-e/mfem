@@ -1,0 +1,44 @@
+                                MFEM Example 3
+
+ Compile with: make ex3
+
+ Sample runs:  ex3 -m ../data/star.mesh
+               ex3 -m ../data/beam-tri.mesh -o 2
+               ex3 -m ../data/beam-tet.mesh
+               ex3 -m ../data/beam-hex.mesh
+               ex3 -m ../data/beam-hex.mesh -o 2 -pa
+               ex3 -m ../data/escher.mesh
+               ex3 -m ../data/escher.mesh -o 2
+               ex3 -m ../data/fichera.mesh
+               ex3 -m ../data/fichera-q2.vtk
+               ex3 -m ../data/fichera-q3.mesh
+               ex3 -m ../data/square-disc-nurbs.mesh
+               ex3 -m ../data/beam-hex-nurbs.mesh
+               ex3 -m ../data/amr-hex.mesh
+               ex3 -m ../data/fichera-amr.mesh
+               ex3 -m ../data/ref-prism.mesh -o 1
+               ex3 -m ../data/octahedron.mesh -o 1
+               ex3 -m ../data/star-surf.mesh -o 1
+               ex3 -m ../data/mobius-strip.mesh -f 0.1
+               ex3 -m ../data/klein-bottle.mesh -f 0.1
+
+ Device sample runs:
+               ex3 -m ../data/star.mesh -pa -d cuda
+               ex3 -m ../data/star.mesh -pa -d raja-cuda
+               ex3 -m ../data/star.mesh -pa -d raja-omp
+               ex3 -m ../data/beam-hex.mesh -pa -d cuda
+
+ Description:  This example code solves a simple electromagnetic diffusion
+               problem corresponding to the second order definite Maxwell
+               equation curl curl E + E = f with boundary condition
+               E x n = <given tangential field>. Here, we use a given exact
+               solution E and compute the corresponding r.h.s. f.
+               We discretize with Nedelec finite elements in 2D or 3D.
+
+               The example demonstrates the use of H(curl) finite element
+               spaces with the curl-curl and the (vector finite element) mass
+               bilinear form, as well as the computation of discretization
+               error when the exact solution is known. Static condensation is
+               also illustrated.
+
+               We recommend viewing examples 1-2 before viewing this example.

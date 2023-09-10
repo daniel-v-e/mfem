@@ -1,0 +1,26 @@
+Options used:
+   --mesh ../data/beam-tri.mesh
+   --refine -1
+   --order 1
+   --alpha -1
+   --kappa 4
+   --visualization
+Number of finite element unknowns: 24576
+Assembling: r.h.s. ... matrix ... done.
+SparseMatrix statistics:
+  Format                      : CSR
+  Dimensions                  : 24576 x 24576
+  Number of entries (total)   : 436736
+  Number of entries (per row) : 17.7708
+  Number of stored zeros      : 16.6197% (72584)
+  Number of Inf/Nan entries   : 0% (0)
+  Norm, max |a_ij|            : 600
+  Symmetry, max |a_ij-a_ji|   : 0
+  Number of small entries:
+    |a_ij| <= 1e-12*Norm      : 16.6197% (72584)
+    |a_ij| <= 1e-15*Norm      : 16.6197% (72584)
+    |a_ij| <= 1e-18*Norm      : 16.6197% (72584)
+  Memory used by CSR          : 5.0918 MiB
+   Iteration :   0  (B r, r) = 303.808 ...
+   Iteration : 767  (B r, r) = 2.79289e-10
+Average reduction factor = 0.982095

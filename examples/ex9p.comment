@@ -1,0 +1,45 @@
+                       MFEM Example 9 - Parallel Version
+
+ Compile with: make ex9p
+
+ Sample runs:
+    mpirun -np 4 ex9p -m ../data/periodic-segment.mesh -p 0 -dt 0.005
+    mpirun -np 4 ex9p -m ../data/periodic-square.mesh -p 0 -dt 0.01
+    mpirun -np 4 ex9p -m ../data/periodic-hexagon.mesh -p 0 -dt 0.01
+    mpirun -np 4 ex9p -m ../data/periodic-square.mesh -p 1 -dt 0.005 -tf 9
+    mpirun -np 4 ex9p -m ../data/periodic-hexagon.mesh -p 1 -dt 0.005 -tf 9
+    mpirun -np 4 ex9p -m ../data/amr-quad.mesh -p 1 -rp 1 -dt 0.002 -tf 9
+    mpirun -np 4 ex9p -m ../data/amr-quad.mesh -p 1 -rp 1 -dt 0.02 -s 13 -tf 9
+    mpirun -np 4 ex9p -m ../data/star-q3.mesh -p 1 -rp 1 -dt 0.004 -tf 9
+    mpirun -np 4 ex9p -m ../data/star-mixed.mesh -p 1 -rp 1 -dt 0.004 -tf 9
+    mpirun -np 4 ex9p -m ../data/disc-nurbs.mesh -p 1 -rp 1 -dt 0.005 -tf 9
+    mpirun -np 4 ex9p -m ../data/disc-nurbs.mesh -p 2 -rp 1 -dt 0.005 -tf 9
+    mpirun -np 4 ex9p -m ../data/periodic-square.mesh -p 3 -rp 2 -dt 0.0025 -tf 9 -vs 20
+    mpirun -np 4 ex9p -m ../data/periodic-cube.mesh -p 0 -o 2 -rp 1 -dt 0.01 -tf 8
+    mpirun -np 4 ex9p -m ../data/periodic-square.msh -p 0 -rs 2 -dt 0.005 -tf 2
+    mpirun -np 4 ex9p -m ../data/periodic-cube.msh -p 0 -rs 1 -o 2 -tf 2
+    mpirun -np 3 ex9p -m ../data/amr-hex.mesh -p 1 -rs 1 -rp 0 -dt 0.005 -tf 0.5
+
+ Device sample runs:
+    mpirun -np 4 ex9p -pa
+    mpirun -np 4 ex9p -ea
+    mpirun -np 4 ex9p -fa
+    mpirun -np 4 ex9p -pa -m ../data/periodic-cube.mesh
+    mpirun -np 4 ex9p -pa -m ../data/periodic-cube.mesh -d cuda
+    mpirun -np 4 ex9p -ea -m ../data/periodic-cube.mesh -d cuda
+    mpirun -np 4 ex9p -fa -m ../data/periodic-cube.mesh -d cuda
+    mpirun -np 4 ex9p -pa -m ../data/amr-quad.mesh -p 1 -rp 1 -dt 0.002 -tf 9 -d cuda
+
+ Description:  This example code solves the time-dependent advection equation
+               du/dt + v.grad(u) = 0, where v is a given fluid velocity, and
+               u0(x)=u(0,x) is a given initial condition.
+
+               The example demonstrates the use of Discontinuous Galerkin (DG)
+               bilinear forms in MFEM (face integrators), the use of implicit
+               and explicit ODE time integrators, the definition of periodic
+               boundary conditions through periodic meshes, as well as the use
+               of GLVis for persistent visualization of a time-evolving
+               solution. Saving of time-dependent data files for visualization
+               with VisIt (visit.llnl.gov) and ParaView (paraview.org), as
+               well as the optional saving with ADIOS2 (adios2.readthedocs.io)
+               are also illustrated.

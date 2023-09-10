@@ -1,0 +1,132 @@
+Options used:
+   --mesh ../data/beam-quad.mesh
+   --order 1
+   --no-static-condensation
+   --flux-averaging 0
+   --visualization
+
+AMR iteration 0
+Number of unknowns: 36
+   Iteration :   0  (B r, r) = 0.000147833 ...
+   Iteration :  20  (B r, r) = 7.27798e-19
+Average reduction factor = 0.43884
+
+AMR iteration 1
+Number of unknowns: 42
+   Iteration :   0  (B r, r) = 0.00205247 ...
+   Iteration :  22  (B r, r) = 5.73225e-18
+Average reduction factor = 0.466905
+
+AMR iteration 2
+Number of unknowns: 76
+   Iteration :   0  (B r, r) = 0.00258037 ...
+   Iteration :  27  (B r, r) = 2.17795e-15
+Average reduction factor = 0.597605
+
+AMR iteration 3
+Number of unknowns: 130
+   Iteration :   0  (B r, r) = 0.00135094 ...
+   Iteration :  36  (B r, r) = 9.00153e-16
+Average reduction factor = 0.677461
+
+AMR iteration 4
+Number of unknowns: 228
+   Iteration :   0  (B r, r) = 0.000834079 ...
+   Iteration :  44  (B r, r) = 6.76597e-16
+Average reduction factor = 0.728792
+
+AMR iteration 5
+Number of unknowns: 378
+   Iteration :   0  (B r, r) = 0.000533188 ...
+   Iteration :  57  (B r, r) = 2.29171e-16
+Average reduction factor = 0.778969
+
+AMR iteration 6
+Number of unknowns: 486
+   Iteration :   0  (B r, r) = 0.000129116 ...
+   Iteration :  65  (B r, r) = 2.71888e-17
+Average reduction factor = 0.798891
+
+AMR iteration 7
+Number of unknowns: 758
+   Iteration :   0  (B r, r) = 0.000209365 ...
+   Iteration :  80  (B r, r) = 9.95106e-17
+Average reduction factor = 0.837493
+
+AMR iteration 8
+Number of unknowns: 1140
+   Iteration :   0  (B r, r) = 0.000125787 ...
+   Iteration :  96  (B r, r) = 8.31557e-17
+Average reduction factor = 0.8641
+
+AMR iteration 9
+Number of unknowns: 1568
+   Iteration :   0  (B r, r) = 6.99082e-05 ...
+   Iteration : 116  (B r, r) = 2.91904e-17
+Average reduction factor = 0.884384
+
+AMR iteration 10
+Number of unknowns: 1672
+   Iteration :   0  (B r, r) = 5.5944e-06 ...
+   Iteration : 118  (B r, r) = 1.80783e-18
+Average reduction factor = 0.885266
+
+AMR iteration 11
+Number of unknowns: 2622
+   Iteration :   0  (B r, r) = 5.79766e-05 ...
+   Iteration : 144  (B r, r) = 3.66036e-17
+Average reduction factor = 0.907068
+
+AMR iteration 12
+Number of unknowns: 2998
+   Iteration :   0  (B r, r) = 1.03431e-05 ...
+   Iteration : 154  (B r, r) = 6.84648e-18
+Average reduction factor = 0.912971
+
+AMR iteration 13
+Number of unknowns: 4818
+   Iteration :   0  (B r, r) = 4.03844e-05 ...
+   Iteration : 201  (B r, r) = 1.99197e-17
+Average reduction factor = 0.931935
+
+AMR iteration 14
+Number of unknowns: 4912
+   Iteration :   0  (B r, r) = 1.78832e-07 ...
+   Iteration : 201  (B r, r) = 1.00678e-19
+Average reduction factor = 0.932242
+
+AMR iteration 15
+Number of unknowns: 6436
+   Iteration :   0  (B r, r) = 1.42951e-05 ...
+   Iteration : 233  (B r, r) = 1.10187e-17
+Average reduction factor = 0.941903
+
+AMR iteration 16
+Number of unknowns: 6654
+   Iteration :   0  (B r, r) = 5.98651e-07 ...
+   Iteration : 236  (B r, r) = 5.53931e-19
+Average reduction factor = 0.942985
+
+AMR iteration 17
+Number of unknowns: 9534
+   Iteration :   0  (B r, r) = 1.1449e-05 ...
+   Iteration : 280  (B r, r) = 8.36487e-18
+Average reduction factor = 0.951323
+
+AMR iteration 18
+Number of unknowns: 10172
+   Iteration :   0  (B r, r) = 1.40511e-06 ...
+   Iteration : 288  (B r, r) = 1.32345e-18
+Average reduction factor = 0.953063
+
+AMR iteration 19
+Number of unknowns: 13896
+   Iteration :   0  (B r, r) = 7.56942e-06 ...
+   Iteration : 325  (B r, r) = 7.02908e-18
+Average reduction factor = 0.958272
+
+AMR iteration 20
+Number of unknowns: 15972
+   Iteration :   0  (B r, r) = 2.49772e-06 ...
+   Iteration : 330  (B r, r) = 2.06118e-18
+Average reduction factor = 0.95872

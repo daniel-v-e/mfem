@@ -1,0 +1,45 @@
+                       MFEM Example 4 - Parallel Version
+
+ Compile with: make ex4p
+
+ Sample runs:  mpirun -np 4 ex4p -m ../data/square-disc.mesh
+               mpirun -np 4 ex4p -m ../data/star.mesh
+               mpirun -np 4 ex4p -m ../data/beam-tet.mesh
+               mpirun -np 4 ex4p -m ../data/beam-hex.mesh
+               mpirun -np 4 ex4p -m ../data/beam-hex.mesh -o 2 -pa
+               mpirun -np 4 ex4p -m ../data/escher.mesh -o 2 -sc
+               mpirun -np 4 ex4p -m ../data/fichera.mesh -o 2 -hb
+               mpirun -np 4 ex4p -m ../data/fichera-q2.vtk
+               mpirun -np 4 ex4p -m ../data/fichera-q3.mesh -o 2 -sc
+               mpirun -np 4 ex4p -m ../data/square-disc-nurbs.mesh -o 3
+               mpirun -np 4 ex4p -m ../data/beam-hex-nurbs.mesh -o 3
+               mpirun -np 4 ex4p -m ../data/periodic-square.mesh -no-bc
+               mpirun -np 4 ex4p -m ../data/periodic-cube.mesh -no-bc
+               mpirun -np 4 ex4p -m ../data/amr-quad.mesh
+               mpirun -np 3 ex4p -m ../data/amr-quad.mesh -o 2 -hb
+               mpirun -np 4 ex4p -m ../data/amr-hex.mesh -o 2 -sc
+               mpirun -np 4 ex4p -m ../data/amr-hex.mesh -o 2 -hb
+               mpirun -np 4 ex4p -m ../data/ref-prism.mesh -o 1
+               mpirun -np 4 ex4p -m ../data/octahedron.mesh -o 1
+               mpirun -np 4 ex4p -m ../data/star-surf.mesh -o 3 -hb
+
+ Device sample runs:
+               mpirun -np 4 ex4p -m ../data/star.mesh -pa -d cuda
+               mpirun -np 4 ex4p -m ../data/star.mesh -pa -d raja-cuda
+               mpirun -np 4 ex4p -m ../data/star.mesh -pa -d raja-omp
+               mpirun -np 4 ex4p -m ../data/beam-hex.mesh -pa -d cuda
+
+ Description:  This example code solves a simple 2D/3D H(div) diffusion
+               problem corresponding to the second order definite equation
+               -grad(alpha div F) + beta F = f with boundary condition F dot n
+               = <given normal field>. Here, we use a given exact solution F
+               and compute the corresponding r.h.s. f.  We discretize with
+               Raviart-Thomas finite elements.
+
+               The example demonstrates the use of H(div) finite element
+               spaces with the grad-div and H(div) vector finite element mass
+               bilinear form, as well as the computation of discretization
+               error when the exact solution is known. Bilinear form
+               hybridization and static condensation are also illustrated.
+
+               We recommend viewing examples 1-3 before viewing this example.

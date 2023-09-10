@@ -1,0 +1,40 @@
+                       MFEM Example 2 - Parallel Version
+
+ Compile with: make ex2p
+
+ Sample runs:  mpirun -np 4 ex2p -m ../data/beam-tri.mesh
+               mpirun -np 4 ex2p -m ../data/beam-quad.mesh
+               mpirun -np 4 ex2p -m ../data/beam-tet.mesh
+               mpirun -np 4 ex2p -m ../data/beam-hex.mesh
+               mpirun -np 4 ex2p -m ../data/beam-wedge.mesh
+               mpirun -np 4 ex2p -m ../data/beam-tri.mesh -o 2 -sys
+               mpirun -np 4 ex2p -m ../data/beam-quad.mesh -o 3 -elast
+               mpirun -np 4 ex2p -m ../data/beam-quad.mesh -o 3 -sc
+               mpirun -np 4 ex2p -m ../data/beam-quad-nurbs.mesh
+               mpirun -np 4 ex2p -m ../data/beam-hex-nurbs.mesh
+
+ Description:  This example code solves a simple linear elasticity problem
+               describing a multi-material cantilever beam.
+
+               Specifically, we approximate the weak form of -div(sigma(u))=0
+               where sigma(u)=lambda*div(u)*I+mu*(grad*u+u*grad) is the stress
+               tensor corresponding to displacement field u, and lambda and mu
+               are the material Lame constants. The boundary conditions are
+               u=0 on the fixed part of the boundary with attribute 1, and
+               sigma(u).n=f on the remainder with f being a constant pull down
+               vector on boundary elements with attribute 2, and zero
+               otherwise. The geometry of the domain is assumed to be as
+               follows:
+
+                                 +----------+----------+
+                    boundary --->| material | material |<--- boundary
+                    attribute 1  |    1     |    2     |     attribute 2
+                    (fixed)      +----------+----------+     (pull down)
+
+               The example demonstrates the use of high-order and NURBS vector
+               finite element spaces with the linear elasticity bilinear form,
+               meshes with curved elements, and the definition of piece-wise
+               constant and vector coefficient objects. Static condensation is
+               also illustrated.
+
+               We recommend viewing Example 1 before viewing this example.

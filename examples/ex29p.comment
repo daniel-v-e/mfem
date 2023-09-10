@@ -1,0 +1,22 @@
+                       MFEM Example 29 - Parallel Version
+
+ Compile with: make ex29p
+
+ Sample runs:  mpirun -np 4 ex29p
+               mpirun -np 4 ex29p -sc
+               mpirun -np 4 ex29p -mt 3 -o 3 -sc
+               mpirun -np 4 ex29p -mt 3 -rs 1 -o 4 -sc
+
+ Description:  This example code demonstrates the use of MFEM to define a
+               finite element discretization of a PDE on a 2 dimensional
+               surface embedded in a 3 dimensional domain. In this case we
+               solve the Laplace problem -Div(sigma Grad u) = 1, with
+               homogeneous Dirichlet boundary conditions, where sigma is an
+               anisotropic diffusion constant defined as a 3x3 matrix
+               coefficient.
+
+               This example demonstrates the use of finite element integrators
+               on 2D domains with 3D coefficients.
+
+               We recommend viewing examples 1 and 7 before viewing this
+               example.

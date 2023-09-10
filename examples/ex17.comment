@@ -1,0 +1,42 @@
+                                MFEM Example 17
+
+ Compile with: make ex17
+
+ Sample runs:
+
+       ex17 -m ../data/beam-tri.mesh
+       ex17 -m ../data/beam-quad.mesh
+       ex17 -m ../data/beam-tet.mesh
+       ex17 -m ../data/beam-hex.mesh
+       ex17 -m ../data/beam-wedge.mesh
+       ex17 -m ../data/beam-quad.mesh -r 2 -o 3
+       ex17 -m ../data/beam-quad.mesh -r 2 -o 2 -a 1 -k 1
+       ex17 -m ../data/beam-hex.mesh -r 2 -o 2
+
+ Description:  This example code solves a simple linear elasticity problem
+               describing a multi-material cantilever beam using symmetric or
+               non-symmetric discontinuous Galerkin (DG) formulation.
+
+               Specifically, we approximate the weak form of -div(sigma(u))=0
+               where sigma(u)=lambda*div(u)*I+mu*(grad*u+u*grad) is the stress
+               tensor corresponding to displacement field u, and lambda and mu
+               are the material Lame constants. The boundary conditions are
+               Dirichlet, u=u_D on the fixed part of the boundary, namely
+               boundary attributes 1 and 2; on the rest of the boundary we use
+               sigma(u).n=0 b.c. The geometry of the domain is assumed to be
+               as follows:
+
+                                 +----------+----------+
+                    boundary --->| material | material |<--- boundary
+                    attribute 1  |    1     |    2     |     attribute 2
+                    (fixed)      +----------+----------+     (fixed, nonzero)
+
+               The example demonstrates the use of high-order DG vector finite
+               element spaces with the linear DG elasticity bilinear form,
+               meshes with curved elements, and the definition of piece-wise
+               constant and function vector-coefficient objects. The use of
+               non-homogeneous Dirichlet b.c. imposed weakly, is also
+               illustrated.
+
+               We recommend viewing examples 2 and 14 before viewing this
+               example.

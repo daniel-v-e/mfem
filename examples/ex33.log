@@ -1,0 +1,79 @@
+Options used:
+   --mesh ../data/square-disc.mesh
+   --order 1
+   --refs 3
+   --alpha 0.5
+   --visualization
+   --no-verification
+Approximating the fractional exponent 0.5
+
+================================================================================
+MFEM is compiled without LAPACK.
+Using precomputed values for PartialFractionApproximation.
+Only alpha = 0.33, 0.5, and 0.99 are available.
+The default is alpha = 0.5.
+================================================================================
+
+=> Using precomputed values for alpha = 0.5
+
+Number of finite element unknowns: 5120
+
+Solving PDE -Δ u + 31682.1 u = 229.026 g 
+   Iteration :   0  (B r, r) = 2.52443e-05 ...
+   Iteration :   6  (B r, r) = 1.37694e-17
+Average reduction factor = 0.0950742
+
+Solving PDE -Δ u + 3236.08 u = 26.4182 g 
+   Iteration :   0  (B r, r) = 0.000114823 ...
+   Iteration :  17  (B r, r) = 3.52699e-17
+Average reduction factor = 0.42853
+
+Solving PDE -Δ u + 986.829 u = 10.0557 g 
+   Iteration :   0  (B r, r) = 0.000150391 ...
+   Iteration :  26  (B r, r) = 1.08795e-16
+Average reduction factor = 0.584153
+
+Solving PDE -Δ u + 394.56 u = 5.39041 g 
+   Iteration :   0  (B r, r) = 0.000163205 ...
+   Iteration :  35  (B r, r) = 1.15596e-16
+Average reduction factor = 0.670551
+
+Solving PDE -Δ u + 173.889 u = 3.34072 g 
+   Iteration :   0  (B r, r) = 0.000168487 ...
+   Iteration :  45  (B r, r) = 8.29489e-17
+Average reduction factor = 0.729873
+
+Solving PDE -Δ u + 79.2518 u = 2.21121 g 
+   Iteration :   0  (B r, r) = 0.000170847 ...
+   Iteration :  55  (B r, r) = 9.61729e-17
+Average reduction factor = 0.773821
+
+Solving PDE -Δ u + 36.2499 u = 1.50888 g 
+   Iteration :   0  (B r, r) = 0.000171938 ...
+   Iteration :  61  (B r, r) = 9.35336e-17
+Average reduction factor = 0.793363
+
+Solving PDE -Δ u + 16.292 u = 1.04947 g 
+   Iteration :   0  (B r, r) = 0.000172449 ...
+   Iteration :  65  (B r, r) = 1.38854e-16
+Average reduction factor = 0.807176
+
+Solving PDE -Δ u + 6.98296 u = 0.746271 g 
+   Iteration :   0  (B r, r) = 0.000172688 ...
+   Iteration :  69  (B r, r) = 1.24118e-16
+Average reduction factor = 0.81659
+
+Solving PDE -Δ u + 2.67998 u = 0.548269 g 
+   Iteration :   0  (B r, r) = 0.000172799 ...
+   Iteration :  70  (B r, r) = 1.67914e-16
+Average reduction factor = 0.820723
+
+Solving PDE -Δ u + 0.778261 u = 0.423251 g 
+   Iteration :   0  (B r, r) = 0.000172848 ...
+   Iteration :  71  (B r, r) = 1.64566e-16
+Average reduction factor = 0.822892
+
+Solving PDE -Δ u + 0.0764917 u = 0.357897 g 
+   Iteration :   0  (B r, r) = 0.000172866 ...
+   Iteration :  72  (B r, r) = 1.17328e-16
+Average reduction factor = 0.823186

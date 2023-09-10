@@ -1,0 +1,34 @@
+                       MFEM Example 13 - Parallel Version
+
+ Compile with: make ex13p
+
+ Sample runs:  mpirun -np 4 ex13p -m ../data/star.mesh
+               mpirun -np 4 ex13p -m ../data/square-disc.mesh -o 2 -n 4
+               mpirun -np 4 ex13p -m ../data/beam-tet.mesh
+               mpirun -np 4 ex13p -m ../data/beam-hex.mesh
+               mpirun -np 4 ex13p -m ../data/escher.mesh
+               mpirun -np 4 ex13p -m ../data/fichera.mesh
+               mpirun -np 4 ex13p -m ../data/fichera-q2.vtk
+               mpirun -np 4 ex13p -m ../data/fichera-q3.mesh
+               mpirun -np 4 ex13p -m ../data/square-disc-nurbs.mesh
+               mpirun -np 4 ex13p -m ../data/beam-hex-nurbs.mesh
+               mpirun -np 4 ex13p -m ../data/amr-quad.mesh -o 2
+               mpirun -np 4 ex13p -m ../data/amr-hex.mesh
+               mpirun -np 4 ex13p -m ../data/mobius-strip.mesh -n 8 -o 2
+               mpirun -np 4 ex13p -m ../data/klein-bottle.mesh -n 10 -o 2
+
+ Description:  This example code solves the Maxwell (electromagnetic)
+               eigenvalue problem curl curl E = lambda E with homogeneous
+               Dirichlet boundary conditions E x n = 0.
+
+               We compute a number of the lowest nonzero eigenmodes by
+               discretizing the curl curl operator using a Nedelec FE space of
+               the specified order in 2D or 3D.
+
+               The example highlights the use of the AME subspace eigenvalue
+               solver from HYPRE, which uses LOBPCG and AMS internally.
+               Reusing a single GLVis visualization window for multiple
+               eigenfunctions is also illustrated.
+
+               We recommend viewing examples 3 and 11 before viewing this
+               example.

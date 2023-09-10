@@ -1,0 +1,74 @@
+                                MFEM Example 33
+
+ Compile with: make ex33
+
+ Sample runs:  ex33 -m ../data/square-disc.mesh -alpha 0.33 -o 2
+               ex33 -m ../data/square-disc.mesh -alpha 4.5 -o 3
+               ex33 -m ../data/star.mesh -alpha 1.4 -o 3
+               ex33 -m ../data/star.mesh -alpha 0.99 -o 3
+               ex33 -m ../data/inline-quad.mesh -alpha 0.5 -o 3
+               ex33 -m ../data/amr-quad.mesh -alpha 1.5 -o 3
+               ex33 -m ../data/disc-nurbs.mesh -alpha 0.33 -o 3
+               ex33 -m ../data/disc-nurbs.mesh -alpha 2.4 -o 3 -r 4
+               ex33 -m ../data/l-shape.mesh -alpha 0.33 -o 3 -r 4
+               ex33 -m ../data/l-shape.mesh -alpha 1.7 -o 3 -r 5
+
+ Verification runs:
+    ex33 -m ../data/inline-segment.mesh -ver -alpha 1.7 -o 2 -r 2
+    ex33 -m ../data/inline-quad.mesh -ver -alpha 1.2 -o 2 -r 2
+    ex33 -m ../data/amr-quad.mesh -ver -alpha 2.6 -o 2 -r 2
+    ex33 -m ../data/inline-hex.mesh -ver -alpha 0.3 -o 2 -r 1
+
+  Note: the analytic solution to this problem is u = ∏_{i=0}^{dim-1} sin(π x_i)
+        for all alpha.
+
+ Description:
+
+  In this example we solve the following fractional PDE with MFEM:
+
+    ( - Δ )^α u = f  in Ω,      u = 0  on ∂Ω,      0 < α,
+
+  To solve this FPDE, we apply the operator ( - Δ )^(-N), where the integer
+  N is given by floor(α). By doing so, we obtain
+
+    ( - Δ )^(α-N) u = ( - Δ )^(-N) f  in Ω,      u = 0  on ∂Ω,      0 < α.
+
+  We first compute the right hand side by solving the integer order PDE
+
+   ( - Δ )^N g = f  in Ω, g = ( - Δ )^k g = 0 on ∂Ω, k = 1,..,N-1
+
+  The remaining FPDE is then given by
+
+  ( - Δ )^(α-N) u = g  in Ω,      u = 0  on ∂Ω.
+
+  We rely on a rational approximation [2] of the normal linear operator
+  A^{-α + N}, where A = - Δ (with associated homogeneous boundary conditions)
+  and (a-N) in (0,1). We approximate the operator
+
+    A^{-α+N} ≈ Σ_{i=0}^M c_i (A + d_i I)^{-1},      d_0 = 0,   d_i > 0,
+
+  where I is the L2-identity operator and the coefficients c_i and d_i
+  are generated offline to a prescribed accuracy in a pre-processing step.
+  We use the triple-A algorithm [1] to generate the rational approximation
+  that this partial fractional expansion derives from. We then solve M+1
+  independent integer-order PDEs,
+
+    A u_i + d_i u_i = c_i g  in Ω,      u_i = 0  on ∂Ω,      i=0,...,M,
+
+  using MFEM and sum u_i to arrive at an approximate solution of the FPDE
+
+    u ≈ Σ_{i=0}^M u_i.
+
+  (If alpha is an integer, we stop after the first PDE was solved.)
+
+ References:
+
+ [1] Nakatsukasa, Y., Sète, O., & Trefethen, L. N. (2018). The AAA algorithm
+     for rational approximation. SIAM Journal on Scientific Computing, 40(3),
+     A1494-A1522.
+
+ [2] Harizanov, S., Lazarov, R., Margenov, S., Marinov, P., & Pasciak, J.
+     (2020). Analysis of numerical methods for spectral fractional elliptic
+     equations based on the best uniform rational approximation. Journal of
+     Computational Physics, 408, 109285.
+

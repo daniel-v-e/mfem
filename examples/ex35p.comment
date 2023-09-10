@@ -1,0 +1,49 @@
+                       MFEM Example 35 - Parallel Version
+
+ Compile with: make ex35p
+
+ Sample runs:  mpirun -np 4 ex35p -p 0 -o 2
+               mpirun -np 4 ex35p -p 0 -o 2 -pbc '22 23 24' -em 0
+               mpirun -np 4 ex35p -p 1 -o 1 -rp 2
+               mpirun -np 4 ex35p -p 1 -o 2
+               mpirun -np 4 ex35p -p 2 -o 1 -rp 2 -c 15
+
+ Device sample runs:
+
+ Description:  This example code demonstrates the use of MFEM to define and
+               solve simple complex-valued linear systems. It implements three
+               variants of a damped harmonic oscillator:
+
+               1) A scalar H1 field
+                  -Div(a Grad u) - omega^2 b u + i omega c u = 0
+
+               2) A vector H(Curl) field
+                  Curl(a Curl u) - omega^2 b u + i omega c u = 0
+
+               3) A vector H(Div) field
+                  -Grad(a Div u) - omega^2 b u + i omega c u = 0
+
+               In each case the field is driven by a forced oscillation, with
+               angular frequency omega, imposed at the boundary or a portion
+               of the boundary. The spatial variation of the boundary
+               condition is computed as an eigenmode of an appropriate
+               operator defined on a portion of the boundary i.e. a port
+               boundary condition.
+
+               In electromagnetics the coefficients are typically named the
+               permeability, mu = 1/a, permittivity, epsilon = b, and
+               conductivity, sigma = c. The user can specify these constants
+               using either set of names.
+
+               This example demonstrates how to transfer fields computed on
+               a boundary generated SubMesh to the full mesh and apply them
+               as boundary conditions. The default mesh and corresponding
+               boundary attriburtes were chosen to verify proper behavior on
+               both triangular and quadrilateral faces of tetrahedral,
+               wedge-shaped, and hexahedral elements.
+
+               The example also demonstrates how to display a time-varying
+               solution as a sequence of fields sent to a single GLVis socket.
+
+               We recommend viewing examples 11, 13, and 22 before viewing
+               this example.

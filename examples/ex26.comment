@@ -1,0 +1,28 @@
+                                MFEM Example 26
+
+ Compile with: make ex26
+
+ Sample runs:  ex26 -m ../data/star.mesh
+               ex26 -m ../data/fichera.mesh
+               ex26 -m ../data/beam-hex.mesh
+
+ Device sample runs:
+               ex26 -d cuda
+               ex26 -d raja-cuda
+               ex26 -d occa-cuda
+               ex26 -d raja-omp
+               ex26 -d occa-omp
+               ex26 -d ceed-cpu
+               ex26 -d ceed-cuda
+               ex26 -m ../data/beam-hex.mesh -d cuda
+
+ Description:  This example code demonstrates the use of MFEM to define a
+               simple finite element discretization of the Laplace problem
+               -Delta u = 1 with homogeneous Dirichlet boundary conditions
+               as in Example 1.
+
+               It highlights on the creation of a hierarchy of discretization
+               spaces with partial assembly and the construction of an
+               efficient multigrid preconditioner for the iterative solver.
+
+               We recommend viewing Example 1 before viewing this example.

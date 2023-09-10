@@ -1,0 +1,51 @@
+
+       _/_/_/  _/      _/      _/  _/
+    _/        _/      _/      _/        _/_/_/
+   _/  _/_/  _/      _/      _/  _/  _/_/
+  _/    _/  _/        _/  _/    _/      _/_/
+   _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+Subdivision factor = 16
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = [0,0]
+Shading type : non-conforming (with subdivision)
+GLVis window closed.
+Thank you for using GLVis.
+Using GLSL 460
+
+       _/_/_/  _/      _/      _/  _/
+    _/        _/      _/      _/        _/_/_/
+   _/  _/_/  _/      _/      _/  _/  _/_/
+  _/    _/  _/        _/  _/    _/      _/_/
+   _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+Subdivision factor = 16
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = [0,0]
+Shading type : non-conforming (with subdivision)
+GLVis window closed.
+Thank you for using GLVis.
+Using GLSL 460
+
+       _/_/_/  _/      _/      _/  _/
+    _/        _/      _/      _/        _/_/_/
+   _/  _/_/  _/      _/      _/  _/  _/_/
+  _/    _/  _/        _/  _/    _/      _/_/
+   _/_/_/  _/_/_/_/    _/      _/  _/_/_/
+
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+Subdivision factor = 16
+[minv,maxv] = [0,0] (maxv-minv = 0)
+ --> [-4.9999e-09,5.0001e-09]
+VisualizationSceneSolution3d::PrepareFlat2() : [min,max] = [0,0]
+Shading type : non-conforming (with subdivision)
+GLVis window closed.
+Thank you for using GLVis.
+Using GLSL 460

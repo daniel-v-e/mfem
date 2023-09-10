@@ -1,0 +1,30 @@
+                                MFEM Example 21
+
+ Compile with: make ex21
+
+ Sample runs:  ex21
+               ex21 -o 3
+               ex21 -m ../data/beam-quad.mesh
+               ex21 -m ../data/beam-quad.mesh -o 3
+               ex21 -m ../data/beam-quad.mesh -o 3 -f 1
+               ex21 -m ../data/beam-tet.mesh
+               ex21 -m ../data/beam-tet.mesh -o 2
+               ex21 -m ../data/beam-hex.mesh
+               ex21 -m ../data/beam-hex.mesh -o 2
+
+ Description:  This is a version of Example 2 with a simple adaptive mesh
+               refinement loop. The problem being solved is again the linear
+               elasticity describing a multi-material cantilever beam.
+               The problem is solved on a sequence of meshes which
+               are locally refined in a conforming (triangles, tetrahedrons)
+               or non-conforming (quadrilaterals, hexahedra) manner according
+               to a simple ZZ error estimator.
+
+               The example demonstrates MFEM's capability to work with both
+               conforming and nonconforming refinements, in 2D and 3D, on
+               linear and curved meshes. Interpolation of functions from
+               coarse to fine meshes, as well as persistent GLVis
+               visualization are also illustrated.
+
+               We recommend viewing Examples 2 and 6 before viewing this
+               example.

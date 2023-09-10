@@ -1,0 +1,17 @@
+Options used:
+   --mesh ../data/star.mesh
+   --geometric-refinements 0
+   --order-refinements 2
+   --device cpu
+   --visualization
+Device configuration: cpu
+Memory configuration: host-std
+Number of finite element unknowns: 20801
+Size of linear system: 20801
+   Iteration :   0  (B r, r) = 0.689154
+   Iteration :   1  (B r, r) = 1.75822e-05
+   Iteration :   2  (B r, r) = 3.86124e-08
+   Iteration :   3  (B r, r) = 2.71591e-10
+   Iteration :   4  (B r, r) = 2.27345e-12
+   Iteration :   5  (B r, r) = 7.88293e-15
+Average reduction factor = 0.0403494
