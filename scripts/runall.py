@@ -25,6 +25,9 @@ def extract_sample_run(line):
     match = re.search(r"(ex\d+ -m \.\./data/[\w-]+\.mesh)", line)
     if match:
         return match.group(1)
+    match = re.search(r"(ex\d+ -o \d+)", line)
+    if match:
+        return match.group(1)
     return None
 
 def custom_sort(filename):
@@ -36,6 +39,7 @@ def custom_sort(filename):
 def main():
     filepaths = sorted(glob.glob('*.cpp'), key=custom_sort)
     filepaths = [f for f in filepaths if not f.endswith('p.cpp')]
+    filepaths = ['ex3.cpp', 'ex34.cpp']
     for filepath in filepaths:
         filename = os.path.basename(filepath)
         basename, _ = os.path.splitext(filename)
@@ -68,6 +72,14 @@ def main():
         
         # Run the glvis command
         run_command(f"~/glvis-4.2/glvis -m {mesh_name} -g {basename}.gf", f"{basename}.glvis.log")
+
+        # delete mesh.mesh, refined.mesh, sol.gf
+        if os.path.exists("sol.gf"):
+            os.remove("sol.gf")
+        if os.path.exists("mesh.mesh"):
+            os.remove("mesh.mesh")
+        if os.path.exists("refined.mesh"):
+            os.remove("refined.mesh")
 
 if __name__ == "__main__":
     main()

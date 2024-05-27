@@ -1,1 +1,0 @@
-g++  -O3 -std=c++11 -I..  ex21.cpp -o ex21 -L.. -lmfem -lrt
